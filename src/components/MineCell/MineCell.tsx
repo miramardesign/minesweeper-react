@@ -3,21 +3,23 @@ import styles from "./MineCell.module.scss";
 
 type MineCellProps = {
   status: string;
-  leftClick: () => void;
-  rightClick: () => void;
+  iRow: number;
+  iCol: number;
+  leftClick: (iRow: number, iCol:number) => void;
+  rightClick: (iRow: number, iCol:number) => void;
 };
 
-const MineCell = ({ status, leftClick, rightClick }: MineCellProps) => {
+const MineCell = ({ status, leftClick, rightClick, iRow, iCol }: MineCellProps) => {
   const handleOnClick = (e: React.MouseEvent<HTMLElement>) => {
     console.log("click in cell", e);
-    leftClick();
+    leftClick(iRow, iCol);
   };
 
   const handleOnContextMenu = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     console.log("context menu right click in cell", e);
-    
-    rightClick();
+
+    rightClick(iRow, iCol);
   };
 
   return (

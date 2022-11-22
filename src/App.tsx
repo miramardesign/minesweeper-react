@@ -32,16 +32,7 @@ function App() {
       </select>
       */}
 
-      {/* component 
-      <section class="wrap-mine" [ngClass]="'win-' + isLose + ' win-type-' ">
-        <div class="row" *ngFor="let row of mineData; let iRow = index">
-            <button *ngFor="let cell of row; let iCol = index" class="square" [ngClass]="'mine-' + cell?.hasMine + ' mark-' + cell.markedAs +
-        ' uncovered-' + cell.uncovered + ' cell-num-adj-' + cell.numAdjMines  " (click)="goTurn(iRow, iCol )"
-                (mouseup)="onMiddleClick($event, iRow, iCol)" (contextmenu)="onRightClick(iRow, iCol)">
-            </button>
-        </div>
-    
-       */}
+
 
        <MineGrid></MineGrid>
 
