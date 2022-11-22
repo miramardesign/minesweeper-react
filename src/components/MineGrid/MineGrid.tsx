@@ -5,7 +5,7 @@ import { getRandInt, existsCell } from "../../utils/mineSetup";
 import { CellData } from "../../types/mineTypes";
 
 const MineGrid = () => {
-  const [status, setStatus] = useState("default state");
+  const [cell, setCell] = useState({});
 
   const [mineData, setMineData] = useState<CellData[][]>([]);
   useEffect(() => {
@@ -79,11 +79,11 @@ const MineGrid = () => {
 
   const handleLeftClick = (iRow: number, iCol: number) => {
     console.log("left click yo", mineData, iRow, iCol);
-    setStatus("left click yo, mineData:");
+    setCell("left click yo, mineData:");
   };
   const handleRightClick = () => {
     console.log("right click yo");
-    setStatus("right click yo");
+    setCell("right click yo");
   };
 
   return (
@@ -93,7 +93,7 @@ const MineGrid = () => {
           {row.map((col, iCol) => (
             <MineCell
               key={iCol}
-              status={col.hasMine}
+              cell={col}
               iRow={iRow}
               iCol={iCol}
               leftClick={handleLeftClick}

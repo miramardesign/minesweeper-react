@@ -1,3 +1,97 @@
 
 
 .title{color: red}
+
+.bomb{
+    color: pink;
+    font-weight: bold;
+    border: 1px solid red;
+}
+
+.square {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    font-size: 24px;
+    border-radius: 0;
+    border: 2px solid black;
+    border-top-color: grey;
+    border-left-color: grey;
+    border-right-color: black;
+    border-bottom-color: black;
+    background-color: lightgray;
+  
+    &.uncovered-true {
+      background-color: gray;
+  
+      &.cell-num-adj-1::after {
+        content: "1";
+        color: blue;
+      }
+      &.cell-num-adj-2::after {
+        content: "2";
+        color: green;
+      }
+      &.cell-num-adj-3::after {
+        content: "3";
+        color: red;
+      }
+      &.cell-num-adj-4::after {
+        content: "4";
+        color: navy;
+      }
+  
+      &.cell-num-adj-5::after {
+        content: "5";
+        color: maroon;
+      }
+      &.cell-num-adj-6::after {
+        content: "6";
+        color: teal;
+      }
+      &.cell-num-adj-7::after {
+        content: "7";
+        color: fuchsia;
+      }
+      &.cell-num-adj-8::after {
+        content: "8";
+        color: black;
+      }
+  
+      cursor: no-drop;
+  
+      &.mine-true.mark-exploded {
+        background-color: red;
+      }
+  
+      &.mine-true:after {
+        content: "\01F4A3";
+        color: blue;
+      }
+    }
+  }
+  
+  .square::after {
+    content: "\00a0";
+  
+    color: green;
+  }
+  
+  .square.mark-flag {
+    cursor: no-drop;
+  
+    &::after {
+      content: "\1F6A9";
+      color: red;
+    }
+  }
+  
+  .square.mark-question {
+    cursor: no-drop;
+    &::after {
+      content: "?";
+      color: blue;
+    }
+  }
+  

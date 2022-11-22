@@ -1,8 +1,9 @@
 import React from "react";
+import { CellData } from "../../types/mineTypes";
 import styles from "./MineCell.module.scss";
 
 type MineCellProps = {
-  status: string;
+  cell: CellData;
   iRow: number;
   iCol: number;
   leftClick: (iRow: number, iCol: number) => void;
@@ -10,7 +11,7 @@ type MineCellProps = {
 };
 
 const MineCell = ({
-  status,
+  cell,
   leftClick,
   rightClick,
   iRow,
@@ -28,13 +29,42 @@ const MineCell = ({
     rightClick(iRow, iCol);
   };
 
+  // className={`
+  // styles.square
+  //  mine-${cell.hasMine}
+  //  mark-${cell.markedAs}
+  //  uncovered-${cell.uncovered}
+  //  cell-num-adj-${cell.numAdjMines}
+  //    `}
+
+  // mine-${cell.hasMine}
+  // mark-${cell.markedAs}
+  // uncovered-${cell.uncovered}
+  // cell-num-adj-${cell.numAdjMines}
+
+  //standard way to add class conditionally. 
+  // ${styles[`${cell.hasMine && 'bomb'}`]}
+
+
   return (
     <button
-      className={styles["title"]}
+      className={`
+      ${styles[`square`]}
+      ${styles[`mine-${cell.hasMine}`]}
+      ${styles[`mark-${cell.markedAs}`]}
+      ${styles[`uncovered-${cell.uncovered}`]}
+      ${styles[`uncovered-true`]}
+      ${styles[`cell-num-adj-${cell.numAdjMines}`]}
+
+
+
+     
+   
+       `}
       onClick={handleOnClick}
       onContextMenu={handleOnContextMenu}
     >
-      {status ? "💣" : "[]"}
+      {/* {cell.hasMine ? "💣" : "&nbsp;"} */}
     </button>
   );
 };
