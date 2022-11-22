@@ -5,11 +5,17 @@ type MineCellProps = {
   status: string;
   iRow: number;
   iCol: number;
-  leftClick: (iRow: number, iCol:number) => void;
-  rightClick: (iRow: number, iCol:number) => void;
+  leftClick: (iRow: number, iCol: number) => void;
+  rightClick: (iRow: number, iCol: number) => void;
 };
 
-const MineCell = ({ status, leftClick, rightClick, iRow, iCol }: MineCellProps) => {
+const MineCell = ({
+  status,
+  leftClick,
+  rightClick,
+  iRow,
+  iCol,
+}: MineCellProps) => {
   const handleOnClick = (e: React.MouseEvent<HTMLElement>) => {
     console.log("click in cell", e);
     leftClick(iRow, iCol);
@@ -28,7 +34,7 @@ const MineCell = ({ status, leftClick, rightClick, iRow, iCol }: MineCellProps) 
       onClick={handleOnClick}
       onContextMenu={handleOnContextMenu}
     >
-       minecell works! {status}
+      {status ? "💣" : "[]"}
     </button>
   );
 };

@@ -1,20 +1,47 @@
 import React, { useEffect, useState } from "react";
 import MineCell from "../MineCell/MineCell";
 import styles from "./MineGrid.module.scss";
+import { getRandInt, existsCell } from "../../utils/mineSetup";
+import { CellData } from "../../types/mineTypes";
 
 const MineGrid = () => {
   const [status, setStatus] = useState("default state");
 
-  //move interfaces to separate files.
-  interface CellData {
-    hasMine: boolean;
-    markedAs: string;
-    uncovered: boolean;
-    numAdjMines: number;
-  }
-
   const [mineData, setMineData] = useState<CellData[][]>([]);
   useEffect(() => {
+    // console.log('todo place mines, in rand col and row, being careful to dedupe such that');
+    // console.log('the num of mines is the prescribed number');
+    const placeMines = (
+      mineData: CellData[][],
+      numRows: number,
+      numCols: number,
+      numMines: number
+    ) => {
+      let minesPlacedLocal = 0;
+
+      while (minesPlacedLocal < numMines) {
+        let rowRand = getRandInt(0, numRows);
+        let colRand = getRandInt(0, numCols);
+
+        if (existsCell(mineData, rowRand, colRand)) {
+          let cell = mineData[rowRand][colRand];
+
+          //choose other celll.
+          if (cell.hasMine) {
+            console.log("mine collision");
+          } else {
+            cell.hasMine = true;
+
+            minesPlacedLocal++;
+          }
+        }
+      }
+
+      //minesPlaced = minesPlacedLocal;
+
+      return mineData;
+    };
+
     /**
      * generares an array with random mines and set h and w
      * @param numRows
@@ -42,7 +69,7 @@ const MineGrid = () => {
         });
       });
 
-      // mineData = this.placeMines(mineData, numRows, numCols, numMines);
+      mineData = placeMines(mineData, numRows, numCols, numMines);
 
       return mineData;
     };
@@ -50,7 +77,7 @@ const MineGrid = () => {
     setMineData(getMineData(5, 5, 4));
   }, []);
 
-  const handleLeftClick = (iRow: number, iCol:number) => {
+  const handleLeftClick = (iRow: number, iCol: number) => {
     console.log("left click yo", mineData, iRow, iCol);
     setStatus("left click yo, mineData:");
   };
@@ -63,21 +90,20 @@ const MineGrid = () => {
     <section>
       {mineData.map((row, iRow) => (
         <div key={iRow}>
-          {row.map((col, iCol) => (     
-              <MineCell key={iCol}
-                status={'hello' + col.hasMine.toString()}
-                iRow={iRow}
-                iCol={iCol}
-                leftClick={handleLeftClick}
-                rightClick={handleRightClick}
-              ></MineCell>
-           ))}
+          {row.map((col, iCol) => (
+            <MineCell
+              key={iCol}
+              status={col.hasMine}
+              iRow={iRow}
+              iCol={iCol}
+              leftClick={handleLeftClick}
+              rightClick={handleRightClick}
+            ></MineCell>
+          ))}
         </div>
       ))}
     </section>
   );
-
-
 };
 
 export default MineGrid;
