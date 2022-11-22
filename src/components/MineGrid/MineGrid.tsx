@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import MineCell from "../MineCell/MineCell";
 import styles from "./MineGrid.module.scss";
-import { getRandInt, existsCell } from "../../utils/mineSetup";
+import { getRandInt, existsCell, setNumAdjMineData } from "../../utils/mineSetup";
 import { CellData } from "../../types/mineTypes";
 
 const MineGrid = () => {
@@ -37,8 +37,6 @@ const MineGrid = () => {
         }
       }
 
-      //minesPlaced = minesPlacedLocal;
-
       return mineData;
     };
 
@@ -70,6 +68,7 @@ const MineGrid = () => {
       });
 
       mineData = placeMines(mineData, numRows, numCols, numMines);
+      mineData = setNumAdjMineData(mineData);
 
       return mineData;
     };
