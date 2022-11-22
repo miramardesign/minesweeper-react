@@ -18,11 +18,8 @@ const [status, setStatus] = useState('default state');
     setStatus('right click yo');
   };
 
-
-
   return (
     <React.Fragment>
-      <h1 className={styles["title"]}> minegrid works!</h1>
 
       <MineCell
         status={status}
