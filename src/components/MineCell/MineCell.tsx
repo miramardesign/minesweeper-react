@@ -29,22 +29,9 @@ const MineCell = ({
     rightClick(iRow, iCol);
   };
 
-  // className={`
-  // styles.square
-  //  mine-${cell.hasMine}
-  //  mark-${cell.markedAs}
-  //  uncovered-${cell.uncovered}
-  //  cell-num-adj-${cell.numAdjMines}
-  //    `}
 
-  // mine-${cell.hasMine}
-  // mark-${cell.markedAs}
-  // uncovered-${cell.uncovered}
-  // cell-num-adj-${cell.numAdjMines}
-
-  //standard way to add class conditionally. 
+  //other way to add class conditionally. 
   // ${styles[`${cell.hasMine && 'bomb'}`]}
-
 
   return (
     <button
@@ -55,10 +42,6 @@ const MineCell = ({
       ${styles[`uncovered-${cell.uncovered}`]}
       ${styles[`uncovered-true`]}
       ${styles[`cell-num-adj-${cell.numAdjMines}`]}
-
-
-
-     
    
        `}
       onClick={handleOnClick}

@@ -1,79 +1,22 @@
 import React, { useEffect, useState } from "react";
 import MineCell from "../MineCell/MineCell";
 import styles from "./MineGrid.module.scss";
-import { getRandInt, existsCell, setNumAdjMineData } from "../../utils/mineSetup";
-import { CellData } from "../../types/mineTypes";
+import {  getMineData  } from "../../utils/mineSetup";
+import { CellData, GameSizes, GameTypes } from "../../types/mineTypes";
 
 const MineGrid = () => {
   const [cell, setCell] = useState({});
 
   const [mineData, setMineData] = useState<CellData[][]>([]);
   useEffect(() => {
-    // console.log('todo place mines, in rand col and row, being careful to dedupe such that');
-    // console.log('the num of mines is the prescribed number');
-    const placeMines = (
-      mineData: CellData[][],
-      numRows: number,
-      numCols: number,
-      numMines: number
-    ) => {
-      let minesPlacedLocal = 0;
 
-      while (minesPlacedLocal < numMines) {
-        let rowRand = getRandInt(0, numRows);
-        let colRand = getRandInt(0, numCols);
+    let gameSizeChosen = 'beginner';
 
-        if (existsCell(mineData, rowRand, colRand)) {
-          let cell = mineData[rowRand][colRand];
+    let numRows = GameSizes[gameSizeChosen as keyof GameTypes].rows;
+    let numCols = GameSizes[gameSizeChosen as keyof GameTypes].cols;
+    let numMines = GameSizes[gameSizeChosen as keyof GameTypes].mines;
 
-          //choose other celll.
-          if (cell.hasMine) {
-            console.log("mine collision");
-          } else {
-            cell.hasMine = true;
-
-            minesPlacedLocal++;
-          }
-        }
-      }
-
-      return mineData;
-    };
-
-    /**
-     * generares an array with random mines and set h and w
-     * @param numRows
-     * @param numCols
-     * @param numMines
-     * @returns
-     */
-    const getMineData = (
-      numRows: number,
-      numCols: number,
-      numMines: number
-    ) => {
-      // let numRows = this.gameSizes[this.gameSizeChosen as keyof GameTypes].rows;
-      // let numCols = this.gameSizes[this.gameSizeChosen as keyof GameTypes].cols;
-      // let numMines = this.gameSizes[this.gameSizeChosen as keyof GameTypes].mines;
-
-      let mineData = new Array(numRows).fill([]).map(() => {
-        return new Array(numCols).fill({}).map((element: CellData) => {
-          return {
-            hasMine: false,
-            markedAs: "",
-            uncovered: false,
-            numAdjMines: 0,
-          };
-        });
-      });
-
-      mineData = placeMines(mineData, numRows, numCols, numMines);
-      mineData = setNumAdjMineData(mineData);
-
-      return mineData;
-    };
-
-    setMineData(getMineData(5, 5, 4));
+    setMineData(getMineData(numRows, numCols, numMines));
   }, []);
 
   const handleLeftClick = (iRow: number, iCol: number) => {
@@ -107,15 +50,14 @@ const MineGrid = () => {
 
 export default MineGrid;
 
-// was
-
+// was in ng
 /* component 
-      <section class="wrap-mine" [ngClass]="'win-' + isLose + ' win-type-' ">
-        <div class="row" *ngFor="let row of mineData; let iRow = index">
-            <button *ngFor="let cell of row; let iCol = index" class="square" [ngClass]="'mine-' + cell?.hasMine + ' mark-' + cell.markedAs +
-        ' uncovered-' + cell.uncovered + ' cell-num-adj-' + cell.numAdjMines  " (click)="goTurn(iRow, iCol )"
-                (mouseup)="onMiddleClick($event, iRow, iCol)" (contextmenu)="onRightClick(iRow, iCol)">
-            </button>
-        </div>
-    
-       */
+<section class="wrap-mine" [ngClass]="'win-' + isLose + ' win-type-' ">
+    <div class="row" *ngFor="let row of mineData; let iRow = index">
+        <button *ngFor="let cell of row; let iCol = index" class="square" [ngClass]="'mine-' + cell?.hasMine + ' mark-' + cell.markedAs +
+    ' uncovered-' + cell.uncovered + ' cell-num-adj-' + cell.numAdjMines  " (click)="goTurn(iRow, iCol )"
+            (mouseup)="onMiddleClick($event, iRow, iCol)" (contextmenu)="onRightClick(iRow, iCol)">
+        </button>
+    </div>
+</section>
+*/
