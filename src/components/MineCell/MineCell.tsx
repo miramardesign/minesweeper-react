@@ -17,7 +17,7 @@ const MineCell = ({
   iRow,
   iCol,
 }: MineCellProps) => {
-  
+
   const handleOnClick = (e: React.MouseEvent<HTMLElement>) => {
     console.log("click in cell", e);
     leftClick(iRow, iCol);
@@ -41,7 +41,7 @@ const MineCell = ({
       ${styles[`mine-${cell.hasMine}`]}
       ${styles[`mark-${cell.markedAs}`]}
       ${styles[`uncovered-${cell.uncovered}`]}
-      ${styles[`uncovered-true`]}
+    
       ${styles[`cell-num-adj-${cell.numAdjMines}`]}
    
        `}
