@@ -17,6 +17,7 @@ const MineCell = ({
   iRow,
   iCol,
 }: MineCellProps) => {
+  
   const handleOnClick = (e: React.MouseEvent<HTMLElement>) => {
     console.log("click in cell", e);
     leftClick(iRow, iCol);
