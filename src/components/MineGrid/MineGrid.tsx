@@ -4,7 +4,6 @@ import styles from "./MineGrid.module.scss";
 import {
   getMineData,
   isLoseCondition,
-  isMine,
   uncoverAdjacentZeroSqs,
 } from "../../utils/mineSetup";
 import { CellData, GameTypes } from "../../types/mineTypes";
@@ -70,26 +69,16 @@ const MineGrid = () => {
         setFlagsPlaced(flagsPlaced - 1);
         cell.markedAs = "question";
         break;
-      } // added brackets
+      } 
       case "question": {
         cell.markedAs = "";
         break;
-      } // added brackets
+      } 
       default: {
         console.log("Empty action received.");
-      } // added brackets
+      }
     }
 
-    // if (cell.markedAs === "") {
-    //   cell.markedAs = "flag";
-    //   setFlagsPlaced(flagsPlaced + 1);
-    //   //its really a flag, the mines are only shown on lose.
-    // } else if (cell.markedAs === "flag") {
-    //   setFlagsPlaced(flagsPlaced - 1);
-    //   cell.markedAs = "question";
-    // } else if (cell.markedAs === "question") {
-    //   cell.markedAs = "";
-    // }
   };
 
   const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -132,7 +121,7 @@ const MineGrid = () => {
 
     console.log("clicked row ", iRow, "col", iCol);
 
-    uncoverCell(iRow, iCol, mineData);
+    uncoverCell(iRow, iCol, mineData, gridSize);
   };
 
   /**
@@ -143,7 +132,7 @@ const MineGrid = () => {
    * @returns
    */
 
-  const uncoverCell = (iRow: number, iCol: number, mineData: CellData[][]) => {
+  const uncoverCell = (iRow: number, iCol: number, mineData: CellData[][], gridSize: string) => {
     if (isLoseCondition(iRow, iCol, mineData)) {
       onLoseCondition(iRow, iCol, mineData);
       return;
@@ -164,7 +153,9 @@ const MineGrid = () => {
 
     setMineData(mineData);
 
-    if (isWinCondition(iRow, iCol, mineData)) {
+    let numMines = GameSizes[gridSize as keyof GameTypes].mines;
+
+    if (isWinCondition(iRow, iCol, mineData, numMines)) {
       onWinCondition();
     }
   };
@@ -199,20 +190,24 @@ const MineGrid = () => {
    * @param iRow
    * @param iCol
    * @param mineData
+   * @param numMines count of mines placed.
    * @returns
    */
   const isWinCondition = (
     iRow: number,
     iCol: number,
-    mineData: CellData[][]
+    mineData: CellData[][],
+    numMines: number
+
   ) => {
-    console.log("isWinCondition");
 
     const allCells: CellData[] = getMineDataOneDim(mineData);
-    const allCellsLen = allCells.length;
-
+    const allCellsNoMineLen = allCells.length - numMines;
+    const unconveredLen =  allCells.filter((cell) => cell.uncovered).length;
+    console.log("isWinCondition --- allCellsNoMineLen", allCellsNoMineLen, 'uncoveredLen', unconveredLen);
+ 
     //join rows together... so i can scan once.
-    return allCells.filter((cell) => cell.uncovered).length === allCellsLen;
+    return unconveredLen === allCellsNoMineLen;
   };
 
   /**
