@@ -8,6 +8,7 @@ import {
 } from "../../utils/mineSetup";
 import { CellData, GameTypes } from "../../types/mineTypes";
 import { GameSizes } from "../../utils/mineSetupData";
+import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
 
 const MineGrid = () => {
   const [cell, setCell] = useState({});
@@ -54,8 +55,6 @@ const MineGrid = () => {
       return;
     }
 
-    setFlagsPlaced(flagsPlaced + 1);
-
     switch (cell.markedAs) {
       case "": {
         cell.markedAs = "flag";
@@ -69,16 +68,15 @@ const MineGrid = () => {
         setFlagsPlaced(flagsPlaced - 1);
         cell.markedAs = "question";
         break;
-      } 
+      }
       case "question": {
         cell.markedAs = "";
         break;
-      } 
+      }
       default: {
         console.log("Empty action received.");
       }
     }
-
   };
 
   const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -102,6 +100,8 @@ const MineGrid = () => {
     let numCols = GameSizes[gridSize as keyof GameTypes].cols;
     let numMines = GameSizes[gridSize as keyof GameTypes].mines;
 
+    setCellsUncovered(0);
+    setFlagsPlaced(0);
     setMineData(getMineData(numRows, numCols, numMines));
   };
 
@@ -132,7 +132,12 @@ const MineGrid = () => {
    * @returns
    */
 
-  const uncoverCell = (iRow: number, iCol: number, mineData: CellData[][], gridSize: string) => {
+  const uncoverCell = (
+    iRow: number,
+    iCol: number,
+    mineData: CellData[][],
+    gridSize: string
+  ) => {
     if (isLoseCondition(iRow, iCol, mineData)) {
       onLoseCondition(iRow, iCol, mineData);
       return;
@@ -150,7 +155,6 @@ const MineGrid = () => {
     mineData[iRow][iCol].markedAs = "uncovered";
 
     uncoverAdjacentZeroSqs(iRow, iCol, mineData);
-
     setMineData(mineData);
 
     let numMines = GameSizes[gridSize as keyof GameTypes].mines;
@@ -198,20 +202,24 @@ const MineGrid = () => {
     iCol: number,
     mineData: CellData[][],
     numMines: number
-
   ) => {
-
+    0;
+    //join rows together... so i can scan once.
     const allCells: CellData[] = getMineDataOneDim(mineData);
     const allCellsNoMineLen = allCells.length - numMines;
-    const unconveredLen =  allCells.filter((cell) => cell.uncovered).length;
-    console.log("isWinCondition --- allCellsNoMineLen", allCellsNoMineLen, 'uncoveredLen', unconveredLen);
- 
-    //join rows together... so i can scan once.
+    const unconveredLen = allCells.filter((cell) => cell.uncovered).length;
+    console.log(
+      "isWinCondition --- allCellsNoMineLen",
+      allCellsNoMineLen,
+      "uncoveredLen",
+      unconveredLen
+    );
+
     return unconveredLen === allCellsNoMineLen;
   };
 
   /**
-   * what happens when we win?
+   * what happens when we win? we go to disneyland...
    */
   const onWinCondition = () => {
     console.log("onWinCondition");
@@ -240,32 +248,44 @@ const MineGrid = () => {
   return (
     <section>
       {/* TODO: componentize below */}
-      {/* <span class="mine-counter"> Mines placed {{minesPlaced}}</span> */}
-      cellsUncovered {cellsUncovered}
-      {/* TODO: componentize below */}
-      <div className={styles["wrap-reset"]}>
-        {isLose && (
-          <button className={"square"} onClick={handleOnClickResetGrid}>
-            :&#40;
-          </button>
-        )}
-        {!isLose && (
-          <button className={"square"} onClick={handleOnClickResetGrid}>
-            :&#41;
-          </button>
-        )}
-        {isLose}
-      </div>
-      {/* TODO: componentize below */}
-      {/* <span class="mark-counter"> Flags placed {flagsPlaced}</span> */}
-      {/* TODO: componentize below */}
-      <select onChange={handleSizeChange}>
+      <select
+        id="choose-game-size"
+        className={styles["wide"]}
+        onChange={handleSizeChange}
+      >
         {Object.keys(GameSizes).map((size) => (
           <option key={size} value={size}>
             {size}
           </option>
         ))}
       </select>
+
+      <article id="wrap-row-digital-display-reset">
+        <DigitalDisplay
+          id={"mines-remaining"}
+          displayNum={
+            GameSizes[gridSize as keyof GameTypes].mines - flagsPlaced
+          }
+        ></DigitalDisplay>
+
+        {/* TODO: componentize below */}
+        <div id="reset" className={styles["wrap-reset"]}>
+          {isLose && (
+            <button className={"square"} onClick={handleOnClickResetGrid}>
+              :&#40;
+            </button>
+          )}
+          {!isLose && (
+            <button className={"square"} onClick={handleOnClickResetGrid}>
+              :&#41;
+            </button>
+          )}
+          {isLose}
+        </div>
+
+        <DigitalDisplay id={"time-counter"} displayNum={88}></DigitalDisplay>
+      </article>
+
       {mineData.map((row, iRow) => (
         <div key={iRow}>
           {row.map((col, iCol) => (
@@ -286,9 +306,6 @@ const MineGrid = () => {
 
 export default MineGrid;
 
-function uncoverAllCells(mineData: CellData[][]) {
-  throw new Error("Function not implemented.");
-}
 // was in ng
 /* component 
 <section class="wrap-mine" [ngClass]="'win-' + isLose + ' win-type-' ">
