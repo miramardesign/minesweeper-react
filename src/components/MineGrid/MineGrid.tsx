@@ -9,6 +9,7 @@ import {
 import { CellData, GameTypes } from "../../types/mineTypes";
 import { GameSizes } from "../../utils/mineSetupData";
 import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
+import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountup";
 
 const MineGrid = () => {
   const [cell, setCell] = useState({});
@@ -284,9 +285,10 @@ const MineGrid = () => {
           {isLose}
         </div>
 
-        <DigitalDisplay id={"time-counter"} displayNum={88}></DigitalDisplay>
+        <DigitalDisplayCountup id={"time-counter"} ></DigitalDisplayCountup>
       </article>
       <br />
+      <hr className={styles.break} />
       <article>
         {mineData.map((row, iRow) => (
           <div key={iRow}>
