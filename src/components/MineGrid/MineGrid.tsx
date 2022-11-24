@@ -267,6 +267,7 @@ const MineGrid = () => {
             GameSizes[gridSize as keyof GameTypes].mines - flagsPlaced
           }
         ></DigitalDisplay>
+        <br />
 
         {/* TODO: componentize below */}
         <div id="reset" className={styles["wrap-reset"]}>
@@ -285,21 +286,23 @@ const MineGrid = () => {
 
         <DigitalDisplay id={"time-counter"} displayNum={88}></DigitalDisplay>
       </article>
-
-      {mineData.map((row, iRow) => (
-        <div key={iRow}>
-          {row.map((col, iCol) => (
-            <MineCell
-              key={iCol}
-              cell={col}
-              iRow={iRow}
-              iCol={iCol}
-              leftClick={handleLeftClick}
-              rightClick={handleRightClick}
-            ></MineCell>
-          ))}
-        </div>
-      ))}
+      <br />
+      <article>
+        {mineData.map((row, iRow) => (
+          <div key={iRow}>
+            {row.map((col, iCol) => (
+              <MineCell
+                key={iCol}
+                cell={col}
+                iRow={iRow}
+                iCol={iCol}
+                leftClick={handleLeftClick}
+                rightClick={handleRightClick}
+              ></MineCell>
+            ))}
+          </div>
+        ))}{" "}
+      </article>
     </section>
   );
 };

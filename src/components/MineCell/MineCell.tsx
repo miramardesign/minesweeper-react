@@ -30,7 +30,6 @@ const MineCell = ({
     rightClick(iRow, iCol);
   };
 
-
   //other way to add class conditionally. 
   // ${styles[`${cell.hasMine && 'bomb'}`]}
 
