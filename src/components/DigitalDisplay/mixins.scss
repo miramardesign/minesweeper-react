@@ -1,0 +1,91 @@
+ 
+
+%triangle-base {
+  display: inline-block;
+  height: 0;
+  width: 0;
+  padding: 0;
+
+  // In case this holds text
+  overflow: hidden;
+  text-indent: 100%;
+
+  border-style: solid;
+  border-color: transparent;
+}
+
+/*\
+   * NOTE: height and width are that of the bounding box, not the triangle!
+  \*/
+@mixin triangle($direction, $color, $width, $height) {
+  @extend %triangle-base;
+
+  @if $direction == "n" {
+    border-width: 0 calc($width/2) $height;
+    border-bottom-color: $color;
+  } @else if $direction == "e" {
+    border-width: calc($width/2) 0 calc($width/2) $height;
+    border-left-color: $color;
+  } @else if $direction == "s" {
+    border-width: $height calc($width/2) 0;
+    border-top-color: $color;
+  } @else if $direction == "w" {
+    border-width: calc($width/2) $height calc($width/2) 0;
+    border-right-color: $color;
+  } @else if $direction == "ne" {
+    border-width: $height 0 0 $width;
+    border-top-color: $color;
+  } @else if $direction == "se" {
+    border-width: 0 0 $height $width;
+    border-bottom-color: $color;
+  } @else if $direction == "sw" {
+    border-width: 0 $width $height 0;
+    border-bottom-color: $color;
+  } @else if $direction == "nw" {
+    border-width: $height $width 0 0;
+    border-top-color: $color;
+  }
+}
+
+.triangle-n-equal {
+  $size: 6em;
+  @include triangle("n", #333, $size, ($size * 0.866));
+}
+
+.triangle-n {
+  @include triangle("n", #f00, 1em, 1em);
+}
+.triangle-e {
+  @include triangle("e", #f00, 1em, 1em);
+}
+.triangle-s {
+  @include triangle("s", #f00, 1em, 1em);
+}
+.triangle-w {
+  @include triangle("w", #f00, 1em, 1em);
+}
+.triangle-ne {
+  @include triangle("ne", #f00, 1em, 1em);
+}
+.triangle-se {
+  @include triangle("se", #f00, 1em, 1em);
+}
+.triangle-sw {
+  @include triangle("sw", #f00, 1em, 1em);
+}
+.triangle-nw {
+  @include triangle("nw", #f00, 1em, 1em);
+}
+
+.icon-expand {
+  @include triangle("e", #fff, 0.75em, 0.5em);
+
+  transition: all 0.5s;
+
+  button:active & {
+    //@include triangle('s', #fff, .75em, .5em);
+    transform: rotateZ(90deg);
+  }
+}
+//end mixins
+ 

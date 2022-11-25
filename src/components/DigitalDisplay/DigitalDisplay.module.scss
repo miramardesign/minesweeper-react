@@ -1,0 +1,161 @@
+@import 'mixins';
+//end mixins
+
+$color: #c11;
+$color_off: rgba($color, 0.1);
+$height:  3em;
+$width: calc($height / 6); //Make sure to use an even number
+
+$height_total: calc( $height + (2 * $width) );
+ 
+.digit {
+  $height_half: calc($height / 2);
+  $width_half:  calc($width/2);
+
+  margin: 5em $height_half 0 $height_half;
+  position: relative;
+  float: left;
+  width: calc( $height_total + $width * 3 );
+  height: calc($height_total * 2 + $width * 3 );
+
+  .unit:nth-child(2n) {
+    transform: rotateZ(90deg);
+    left: calc($height_total/2);
+  }
+
+  .unit:nth-child(1) {
+    top: calc($width/2);
+    left: 0;
+  }
+
+  .unit:nth-child(7) {
+    top: calc($width/2);
+    left: $height_total;
+  }
+
+  .unit:nth-child(3) {
+    top: calc(calc($width/2) + $height_total);
+    left: 0;
+  }
+
+  .unit:nth-child(5) {
+    top: calc(calc($width/2) + $height_total);
+    left: calc( $height + ($width * 2) );
+  }
+
+  .unit:nth-child(2) {
+    top: calc(0em - $height_total/2 + $width/2);
+  }
+
+  .unit:nth-child(4) {
+    top: calc(($height_total/2) + calc($width/2));
+  }
+
+  .unit:nth-child(6) {
+    top: calc(3/2 * $height_total) + calc($width/2);
+  }
+
+  &.num-0 {
+    .unit:nth-child(4n) {
+      @extend %unit--off;
+    }
+  }
+
+  &.num-1 {
+    .unit:nth-child(1),
+    .unit:nth-child(3),
+    .unit:nth-child(2),
+    .unit:nth-child(4),
+    .unit:nth-child(6) {
+      @extend %unit--off;
+    }
+  }
+
+  &.num-2 {
+    .unit:nth-child(4n + 1) {
+      @extend %unit--off;
+    }
+  }
+
+  &.num-3 {
+    .unit:nth-child(1),
+    .unit:nth-child(3) {
+      @extend %unit--off;
+    }
+  }
+
+  &.num-4 {
+    .unit:nth-child(2),
+    .unit:nth-child(3),
+    .unit:nth-child(6) {
+      @extend %unit--off;
+    }
+  }
+
+  &.num-5 {
+    .unit:nth-child(4n + 3) {
+      @extend %unit--off;
+    }
+  }
+
+  &.num-6 {
+    .unit:nth-child(7n) {
+      @extend %unit--off;
+    }
+  }
+
+  &.num-7 {
+    .unit:nth-child(1),
+    .unit:nth-child(3),
+    .unit:nth-child(4),
+    .unit:nth-child(6) {
+      @extend %unit--off;
+    }
+  }
+  // .num-8, No change deleted, is default
+
+  &.num-9 {
+    .unit:nth-child(3n) {
+      @extend %unit--off;
+    }
+  }
+}
+
+%unit--off {
+  //display: none;
+  background: $color_off;
+  color: $color_off;
+  box-shadow: none;
+}
+
+.unit {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: $width;
+  height: $height;
+  background: $color;
+  color: $color;
+  box-shadow: 0 0 1em $color;
+
+  $width_half: calc($width/2);
+
+  &::before {
+    @include triangle("n", inherit, $width, calc($width/2));
+
+    content: "";
+
+    position: absolute;
+    top: calc(0em - $width/2);
+    left: 0;
+  }
+  &::after {
+    @include triangle("s", inherit, $width, calc($width/2));
+
+    content: "";
+    position: absolute;
+    bottom: calc( 0em - $width/2 );
+    left: 0;
+  }
+}
