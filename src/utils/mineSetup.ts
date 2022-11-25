@@ -232,5 +232,22 @@ const isLoseCondition = (
 };
 
 
+  /**
+   * one dimensional array of cell data, instead of being split into rows/cols its just an array.
+   * @param mineData
+   * @returns
+   */
+   const getMineDataOneDim = (mineData: CellData[][]): CellData[] => {
+    let mineDataOneDim: CellData[] = [];
+    mineData.map((row, iRow) => {
+      row.map((cell, iCol) => {
+        mineDataOneDim.push(cell);
+      });
+    });
 
-export {  getMineData, isMine, uncoverAdjacentZeroSqs, isLoseCondition };
+    return mineDataOneDim;
+  };
+
+
+
+export {  getMineData, getMineDataOneDim, isMine, uncoverAdjacentZeroSqs, isLoseCondition };

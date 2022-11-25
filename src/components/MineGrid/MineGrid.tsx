@@ -41,6 +41,12 @@ const MineGrid = () => {
     setCell("right click yo");
     setCellMark(iRow, iCol, mineData);
   };
+  
+  const handleTimeout = (msg:string) => {
+   // const msg = "timeout yo";
+    console.log(msg);
+    alert(msg);
+  };
 
   //just marks as bomb on 1st right click, as question on 2nd and clears on third,
   const setCellMark = (
@@ -173,23 +179,7 @@ const MineGrid = () => {
     });
     setMineData(mineData);
   };
-
-  /**
-   * one dimensional array of cell data, instead of being split into rows/cols its just an array.
-   * @param mineData
-   * @returns
-   */
-  const getMineDataOneDim = (mineData: CellData[][]): CellData[] => {
-    let mineDataOneDim: CellData[] = [];
-    mineData.map((row, iRow) => {
-      row.map((cell, iCol) => {
-        mineDataOneDim.push(cell);
-      });
-    });
-
-    return mineDataOneDim;
-  };
-
+ 
   /**
    * determines if user has won, counts uncovered cells
    * @param iRow
@@ -285,7 +275,7 @@ const MineGrid = () => {
           {isLose}
         </div>
 
-        <DigitalDisplayCountup id={"time-counter"} ></DigitalDisplayCountup>
+        <DigitalDisplayCountup id={"time-counter"} timeoutCount={handleTimeout} ></DigitalDisplayCountup>
       </article>
       <br />
       <hr className={styles.break} />

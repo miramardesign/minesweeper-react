@@ -4,49 +4,39 @@ import styles from "./DigitalDisplay.module.scss";
 
 type DigitalDisplayProps = {
   id: string;
-  displayNum: number;
+  timeoutCount: (msg: string) => void;
 };
 
-const DigitalDisplayCountup = ({ displayNum, id }: DigitalDisplayProps) => {
+const DigitalDisplayCountup = ({ id, timeoutCount }: DigitalDisplayProps) => {
   let start = new Date().getTime();
 
   const interval = 1000;
   const [countUp, setCountUp] = useState(0);
-  const maxCount = 999;
+  const maxCount = 3;
 
   // Use useRef for mutable variables that we want to persist
   // without triggering a re-render on their change
   const requestRef = useRef(0);
 
-  const stopParentGame = () => {
-    console.log('stop game here!!!');
-  }
-
   const animate = () => {
     if (new Date().getTime() - start >= interval) {
-      console.log("animate, count", countUp);
-      if (countUp > maxCount) {
-        console.log("stop count!!!!!!!!!!!!!!!!", countUp);
-        return cancelAnimationFrame(requestRef.current);
-      }
-
       start = new Date().getTime();
-      console.log("animate, count", countUp);
 
       setCountUp((countUp) => {
-        if (countUp === maxCount) {
-          console.log("stop count!!!!!!!!!!!!!!!!", countUp);
-          cancelAnimationFrame(requestRef.current);
-          stopParentGame();
-          return maxCount;
-        }
-
         return countUp + 1;
       });
- 
-     }
+    }
     requestRef.current = requestAnimationFrame(animate);
   };
+
+  useEffect(() => {
+    console.log("countup==================", countUp);
+    if (countUp === maxCount) {
+      console.log("stop count!!!!!!!!!!!!!!!!", countUp);
+      cancelAnimationFrame(requestRef.current);
+      timeoutCount("msg countup was" + countUp);
+    }
+  }, [countUp]);
 
   useEffect(() => {
     requestRef.current = requestAnimationFrame(animate);
