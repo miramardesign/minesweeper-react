@@ -5,6 +5,7 @@ import {
   getMineData,
   getMineDataOneDim,
   isLoseCondition,
+  placeCellMark,
   placeMines,
   placeNumAdjMineData,
   uncoverAdjacentZeroSqs,
@@ -15,11 +16,13 @@ import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
 import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountup";
 
 const MineGrid = () => {
-  const [cell, setCell] = useState({});
+  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [isLose, setIsLose] = useState(false);
+
 
   const [mineData, setMineData] = useState<CellData[][]>([]);
   const [gridSize, setGridSize] = useState("beginner");
-  const [isLose, setIsLose] = useState(false);
   const [cellsUncovered, setCellsUncovered] = useState(0);
   const [flagsPlaced, setFlagsPlaced] = useState(0);
 
@@ -35,23 +38,34 @@ const MineGrid = () => {
   const handleLeftClick = (iRow: number, iCol: number) => {
     console.log("left click yo", mineData, iRow, iCol);
     if (cellsUncovered === 0) {
+
+      //not working either.... kickstart the display countup.
+      // setIsGameStarted(() => { return true });
+      setIsGameStarted(true);
+
+
       let numRows = GameSizes[gridSize as keyof GameTypes].rows;
       let numCols = GameSizes[gridSize as keyof GameTypes].cols;
       let numMines = GameSizes[gridSize as keyof GameTypes].mines;
 
-      let mineDataLocal = placeMines(mineData, numRows, numCols, numMines, iRow, iCol);
+      let mineDataLocal = placeMines(
+        mineData,
+        numRows,
+        numCols,
+        numMines,
+        iRow,
+        iCol
+      );
       mineDataLocal = placeNumAdjMineData(mineDataLocal);
       setMineData(mineDataLocal);
     }
     goTurn(iRow, iCol);
-    setCell("left click yo, mineData:");
   };
 
   const handleRightClick = (iRow: number, iCol: number) => {
     console.log("right click yo");
     console.log("right click yo", mineData, iRow, iCol);
 
-    setCell("right click yo");
     setCellMark(iRow, iCol, mineData);
   };
 
@@ -62,7 +76,7 @@ const MineGrid = () => {
   };
 
   //just marks as bomb on 1st right click, as question on 2nd and clears on third,
-  const setCellMark = (
+  const setCellMarkOld = (
     iRow: number,
     iCol: number,
     mineData: CellData[][]
@@ -99,6 +113,18 @@ const MineGrid = () => {
     }
   };
 
+  const setCellMark = (
+    iRow: number,
+    iCol: number,
+    mineData: CellData[][]
+  ): void => {
+    console.log("right click?????????????", iRow, iCol);
+    let ret = placeCellMark(iRow, iCol, mineData);
+    setFlagsPlaced(ret.flagsPlaced);
+    setMineData(ret.mineData);
+
+  };
+
   const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     console.log("Size Selected!!", e.target.value);
     setGridSize(e.target.value);
@@ -123,6 +149,8 @@ const MineGrid = () => {
     setCellsUncovered(0);
     setFlagsPlaced(0);
     setMineData(getMineData(numRows, numCols, numMines));
+    setIsGameStarted(false);
+    setIsGameOver(false)
   };
 
   /**
@@ -184,6 +212,10 @@ const MineGrid = () => {
     }
   };
 
+  /**
+   * show whole board for win-lose
+   * @param mineData 
+   */
   const uncoverAllCells = (mineData: CellData[][]): void => {
     mineData.map((row, iRow) => {
       row.map((cell, iCol) => {
@@ -242,6 +274,10 @@ const MineGrid = () => {
     console.log("onLoseCondition");
 
     setIsLose(true);
+// setIsGameStarted(false);
+setIsGameOver(true)
+
+
     mineData[iRow][iCol].markedAs = "exploded";
     uncoverAllCells(mineData);
     window.setTimeout(() => {
@@ -291,7 +327,8 @@ const MineGrid = () => {
         <DigitalDisplayCountup
           id={"time-counter"}
           timeoutCount={handleTimeout}
-          gameOver={false}
+          startCount={isGameStarted}
+          gameOver={isGameOver}
         ></DigitalDisplayCountup>
       </article>
       <br />

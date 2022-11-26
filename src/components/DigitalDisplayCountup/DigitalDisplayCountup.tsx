@@ -6,10 +6,11 @@ import styles from "./DigitalDisplay.module.scss";
 type DigitalDisplayProps = {
   id: string;
   timeoutCount: (msg: string) => void;
+  startCount: boolean;
   gameOver: boolean;
 };
 
-const DigitalDisplayCountup = ({ id, timeoutCount, gameOver }: DigitalDisplayProps) => {
+const DigitalDisplayCountup = ({ id, timeoutCount, startCount, gameOver }: DigitalDisplayProps) => {
   let start = new Date().getTime();
 
   const interval = 1000;
@@ -31,20 +32,30 @@ const DigitalDisplayCountup = ({ id, timeoutCount, gameOver }: DigitalDisplayPro
     requestRef.current = requestAnimationFrame(animate);
   };
 
+//start when told
+  useEffect(() => {
+    if(startCount){
+      requestRef.current = requestAnimationFrame(animate);
+
+    }else{
+      setCountUp(0)
+    }
+    return () => cancelAnimationFrame(requestRef.current);
+ }, [startCount]);
+
+
   //kill anim on timeout max
   useEffect(() => {
-     if (countUp >= maxCount || gameOver) {
+     if (countUp >= maxCount ) {
       console.log("stop count!!!!!!!!!!!!!!!!", countUp);
       cancelAnimationFrame(requestRef.current);
       timeoutCount("msg countup was" + countUp);
     }
+    if(gameOver){
+      cancelAnimationFrame(requestRef.current);
+    }
   }, [countUp]);
 
-  //start animation. 
-  useEffect(() => {
-    requestRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(requestRef.current);
-  }, []); 
 
   return (
     <div>

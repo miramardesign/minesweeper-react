@@ -91,6 +91,61 @@ const placeNumAdjMineData = (mineData: CellData[][]) => {
   return mineData;
 };
 
+  
+  /**
+   * just marks as bomb on 1st right click, as question on 2nd and clears on third,
+   * @param iRow 
+   * @param iCol 
+   * @param mineData 
+   * @returns 
+   */
+  const placeCellMark = (
+    iRow: number,
+    iCol: number,
+    mineData: CellData[][]
+  ): any => {
+    console.log("right click?????????????", iRow, iCol);
+
+    const cell = mineData[iRow][iCol];
+    let flagsPlaced = 0;
+
+    if (cell.uncovered) {
+      return;
+    }
+
+    switch (cell.markedAs) {
+      case "": {
+        cell.markedAs = "flag";
+
+       // setFlagsPlaced(flagsPlaced + 1);
+       flagsPlaced = 1;
+        //its really a flag, the mines are only shown on lose.
+
+        break;
+      }
+      case "flag": {
+       // setFlagsPlaced(flagsPlaced - 1);
+       flagsPlaced = -1;
+        cell.markedAs = "question";
+        break;
+      }
+      case "question": {
+        cell.markedAs = "";
+        break;
+      }
+      default: {
+        console.log("Empty action received.");
+      }
+    }
+
+    return {
+      flagsPlaced: flagsPlaced,
+      mineData: mineData,
+    }
+
+  };
+
+
 /**
  * pass in a row and col and return if hasMine,
  * returning false if doesnt exist (so the edges dont fail)
@@ -277,4 +332,5 @@ export {
   getUncoveredCells,
   placeMines,
   placeNumAdjMineData,
+  placeCellMark,
 };
