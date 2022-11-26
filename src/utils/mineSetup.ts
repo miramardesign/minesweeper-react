@@ -32,9 +32,12 @@ const placeMines = (
   mineData: CellData[][],
   numRows: number,
   numCols: number,
-  numMines: number
+  numMines: number,
+  rowInitialCell: number,
+  colInitialCell: number
 ) => {
   let minesPlacedLocal = 0;
+
 
   while (minesPlacedLocal < numMines) {
     let rowRand = getRandInt(0, numRows);
@@ -43,12 +46,12 @@ const placeMines = (
     if (existsCell(mineData, rowRand, colRand)) {
       let cell = mineData[rowRand][colRand];
 
-      //TODO exclude the first clicked cell, from bombs placeed.
-      // let initialCell = mineData[rowInitialCall, colInitialCell];
+      //TODO exclude the first clicked cell, from bombs placed.
+      const isInitialCell = rowRand === rowInitialCell || colRand === colInitialCell;
 
       //choose other celll.
-     // if (cell.hasMine ||   ) {
-      if (cell.hasMine  ) {
+      if (cell.hasMine || isInitialCell  ) {
+     // if (cell.hasMine) {
         console.log("mine collision");
       } else {
         cell.hasMine = true;
@@ -65,7 +68,7 @@ const placeMines = (
  * put the adjacent mine date in the mine data.
  * @param mineData
  */
-const setNumAdjMineData = (mineData: CellData[][]) => {
+const placeNumAdjMineData = (mineData: CellData[][]) => {
   mineData.map((row, iRow) => {
     //  console.log('row' + index, row);
     row.map((cell, iCol) => {
@@ -121,81 +124,91 @@ const existsAndIsMine = (
 
 const isMine = (iRow: number, iCol: number, mineData: CellData[][]) => {
   return mineData[iRow][iCol].hasMine;
-}
+};
 
-  /**
-   * probably need to loop via...
-   * @param iRow
-   * @param iCol
-   */
-  const uncoverAdjacentZeroSqs = (iRow: number, iCol: number, mineData: CellData[][]) => {
-    if (mineData[iRow][iCol].numAdjMines === 0) {
-      console.log('todo uncover zero cells near here');
-      loopAdjCells(
-        mineData,
-        iRow,
-        iCol,
-        (mineData: CellData[][], iRow: number, iCol: number) => {
-          // console.log('cb', mineData, iRow, iCol);
+/**
+ * probably need to loop via...
+ * @param iRow
+ * @param iCol
+ */
+const uncoverAdjacentZeroSqs = (
+  iRow: number,
+  iCol: number,
+  mineData: CellData[][]
+) => {
+  if (mineData[iRow][iCol].numAdjMines === 0) {
+    console.log("todo uncover zero cells near here");
+    loopAdjCells(
+      mineData,
+      iRow,
+      iCol,
+      (mineData: CellData[][], iRow: number, iCol: number) => {
+        // console.log('cb', mineData, iRow, iCol);
 
-          let cell = mineData[iRow][iCol];
-          if (cell.numAdjMines < 4) {
-            if (!cell.uncovered) {
-              cell.uncovered = true;
+        let cell = mineData[iRow][iCol];
+        if (cell.numAdjMines < 4) {
+          if (!cell.uncovered) {
+            cell.uncovered = true;
 
-              //call neighborcells recursion!!---
-              uncoverAdjacentZeroSqs(iRow, iCol, mineData);
-            }
+            //call neighborcells recursion!!---
+            uncoverAdjacentZeroSqs(iRow, iCol, mineData);
           }
         }
-      );
-    } 
-
-    return mineData;
+      }
+    );
   }
+    
+    
 
-    /**
-   * run a cb on every adj cell of a given cell by iCol and iRow
-   * @param mineData 
-   * @param iRow 
-   * @param iCol 
-   * @param cb 
-   */
-    const loopAdjCells = (mineData: CellData[][], iRow: number, iCol: number, cb: any) => {
-      let perimeter: PerimeterDirections = {
-        northWest: {
-          iRow: iRow - 1,
-          iCol: iCol - 1,
-        },
-        north: {
-          iRow: iRow - 1,
-          iCol: iCol,
-        },
-        northEast: { iRow: iRow - 1, iCol: iCol + 1 },
-  
-        west: { iRow: iRow, iCol: iCol - 1 },
-        east: { iRow: iRow, iCol: iCol + 1 },
-  
-        southWest: {
-          iRow: iRow + 1,
-          iCol: iCol - 1,
-        },
-        south: {
-          iRow: iRow + 1,
-          iCol: iCol,
-        },
-        southEast: { iRow: iRow + 1, iCol: iCol + 1 },
-      };
-  
-      Object.entries(perimeter).forEach(([key, cell], index) => {
-        // console.log(key, '-----direction', cell);
-  
-        if (existsCell(mineData, cell.iRow, cell.iCol)) {
-          cb(mineData, cell.iRow, cell.iCol);
-        }
-      });
+  return mineData;
+};
+
+/**
+ * run a cb on every adj cell of a given cell by iCol and iRow
+ * @param mineData
+ * @param iRow
+ * @param iCol
+ * @param cb
+ */
+const loopAdjCells = (
+  mineData: CellData[][],
+  iRow: number,
+  iCol: number,
+  cb: any
+) => {
+  let perimeter: PerimeterDirections = {
+    northWest: {
+      iRow: iRow - 1,
+      iCol: iCol - 1,
+    },
+    north: {
+      iRow: iRow - 1,
+      iCol: iCol,
+    },
+    northEast: { iRow: iRow - 1, iCol: iCol + 1 },
+
+    west: { iRow: iRow, iCol: iCol - 1 },
+    east: { iRow: iRow, iCol: iCol + 1 },
+
+    southWest: {
+      iRow: iRow + 1,
+      iCol: iCol - 1,
+    },
+    south: {
+      iRow: iRow + 1,
+      iCol: iCol,
+    },
+    southEast: { iRow: iRow + 1, iCol: iCol + 1 },
+  };
+
+  Object.entries(perimeter).forEach(([key, cell], index) => {
+    // console.log(key, '-----direction', cell);
+
+    if (existsCell(mineData, cell.iRow, cell.iCol)) {
+      cb(mineData, cell.iRow, cell.iCol);
     }
-
+  });
+};
 
 /**
  * generates an array with random mines and set h and w
@@ -216,8 +229,8 @@ const getMineData = (numRows: number, numCols: number, numMines: number) => {
     });
   });
 
-  mineData = placeMines(mineData, numRows, numCols, numMines);
-  mineData = setNumAdjMineData(mineData);
+  // mineData = placeMines(mineData, numRows, numCols, numMines);
+  // mineData = setNumAdjMineData(mineData);
 
   return mineData;
 };
@@ -227,27 +240,41 @@ const isLoseCondition = (
   iCol: number,
   mineData: CellData[][]
 ) => {
-
   return isMine(iRow, iCol, mineData);
 };
 
-
-  /**
-   * one dimensional array of cell data, instead of being split into rows/cols its just an array.
-   * @param mineData
-   * @returns
-   */
-   const getMineDataOneDim = (mineData: CellData[][]): CellData[] => {
-    let mineDataOneDim: CellData[] = [];
-    mineData.map((row, iRow) => {
-      row.map((cell, iCol) => {
-        mineDataOneDim.push(cell);
-      });
+/**
+ * one dimensional array of cell data, instead of being split into rows/cols its just an array.
+ * @param mineData
+ * @returns
+ */
+const getMineDataOneDim = (mineData: CellData[][]): CellData[] => {
+  let mineDataOneDim: CellData[] = [];
+  mineData.map((row, iRow) => {
+    row.map((cell, iCol) => {
+      mineDataOneDim.push(cell);
     });
+  });
 
-    return mineDataOneDim;
-  };
+  return mineDataOneDim;
+};
 
+const getUncoveredCells = (mineData: CellData[][]): CellData[][] => {
+  mineData.map((row, iRow) => {
+    row.map((cell, iCol) => {
+      mineData[iRow][iCol].uncovered = true;
+    });
+  });
+  return mineData;
+};
 
-
-export {  getMineData, getMineDataOneDim, isMine, uncoverAdjacentZeroSqs, isLoseCondition };
+export {
+  getMineData,
+  getMineDataOneDim,
+  isMine,
+  uncoverAdjacentZeroSqs,
+  isLoseCondition,
+  getUncoveredCells,
+  placeMines,
+  placeNumAdjMineData,
+};

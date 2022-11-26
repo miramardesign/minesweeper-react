@@ -3,7 +3,10 @@ import MineCell from "../MineCell/MineCell";
 import styles from "./MineGrid.module.scss";
 import {
   getMineData,
+  getMineDataOneDim,
   isLoseCondition,
+  placeMines,
+  placeNumAdjMineData,
   uncoverAdjacentZeroSqs,
 } from "../../utils/mineSetup";
 import { CellData, GameTypes } from "../../types/mineTypes";
@@ -20,6 +23,7 @@ const MineGrid = () => {
   const [cellsUncovered, setCellsUncovered] = useState(0);
   const [flagsPlaced, setFlagsPlaced] = useState(0);
 
+  //---use effects
   useEffect(() => {
     let numRows = GameSizes[gridSize as keyof GameTypes].rows;
     let numCols = GameSizes[gridSize as keyof GameTypes].cols;
@@ -30,6 +34,15 @@ const MineGrid = () => {
 
   const handleLeftClick = (iRow: number, iCol: number) => {
     console.log("left click yo", mineData, iRow, iCol);
+    if (cellsUncovered === 0) {
+      let numRows = GameSizes[gridSize as keyof GameTypes].rows;
+      let numCols = GameSizes[gridSize as keyof GameTypes].cols;
+      let numMines = GameSizes[gridSize as keyof GameTypes].mines;
+
+      let mineDataLocal = placeMines(mineData, numRows, numCols, numMines, iRow, iCol);
+      mineDataLocal = placeNumAdjMineData(mineDataLocal);
+      setMineData(mineDataLocal);
+    }
     goTurn(iRow, iCol);
     setCell("left click yo, mineData:");
   };
@@ -41,9 +54,9 @@ const MineGrid = () => {
     setCell("right click yo");
     setCellMark(iRow, iCol, mineData);
   };
-  
-  const handleTimeout = (msg:string) => {
-   // const msg = "timeout yo";
+
+  const handleTimeout = (msg: string) => {
+    // const msg = "timeout yo";
     console.log(msg);
     alert(msg);
   };
@@ -179,7 +192,7 @@ const MineGrid = () => {
     });
     setMineData(mineData);
   };
- 
+
   /**
    * determines if user has won, counts uncovered cells
    * @param iRow
@@ -275,7 +288,11 @@ const MineGrid = () => {
           {isLose}
         </div>
 
-        <DigitalDisplayCountup id={"time-counter"} timeoutCount={handleTimeout} ></DigitalDisplayCountup>
+        <DigitalDisplayCountup
+          id={"time-counter"}
+          timeoutCount={handleTimeout}
+          gameOver={false}
+        ></DigitalDisplayCountup>
       </article>
       <br />
       <hr className={styles.break} />

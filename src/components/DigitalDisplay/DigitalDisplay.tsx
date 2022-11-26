@@ -6,6 +6,7 @@ type DigitalDisplayProps = {
   displayNum: number;
 };
 
+//somewhat from: https://codepen.io/rafa-rodrigues/pen/LYErBpb
 const DigitalDisplay = ({ displayNum, id }: DigitalDisplayProps) => {
  
 

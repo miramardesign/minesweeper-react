@@ -5,6 +5,14 @@ export interface CellData {
   numAdjMines: number;
 }
 
+export interface RowData {
+ cells: CellData[];
+}
+export interface MineData {
+ rows: RowData[];
+}
+
+
 interface CellDirectionData {
   iRow: number;
   iCol: number;
