@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import MineCell from "../MineCell/MineCell";
 import styles from "./MineGrid.module.scss";
 import {
@@ -23,17 +23,21 @@ import { GameSizes } from "../../utils/mineSetupData";
 import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
 import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountup";
 import GameSizeChooser from "../GameSizeChooser/GameSizeChooser";
+import { GameContext } from "../../contexts/GameProvider";
+import { GameActionType } from "../../types/state";
 
 const MineGrid = () => {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [isLose, setIsLose] = useState(false);
+  // const [isLose, setIsLose] = useState(false);
   const [gameState, setGameState] = useState(GameState.UNSTARTED);
 
   const [mineData, setMineData] = useState<CellData[][]>([]);
   const [gridSize, setGridSize] = useState("beginner" as GameTypesKeys);
   const [cellsUncovered, setCellsUncovered] = useState(0);
   const [flagsPlaced, setFlagsPlaced] = useState(0);
+
+  const { state, dispatch } = useContext(GameContext);
 
   //---use effects
   useEffect(() => {
@@ -138,7 +142,9 @@ const MineGrid = () => {
    * @param gridSize
    */
   const resetGrid = (gridSize: String) => {
-    setIsLose(false);
+    // setIsLose(false);
+    dispatch({ type: GameActionType.TOGGLE_LOST });
+
     let numRows = GameSizes[gridSize as keyof GameTypes].rows;
     let numCols = GameSizes[gridSize as keyof GameTypes].cols;
     let numMines = GameSizes[gridSize as keyof GameTypes].mines;
@@ -160,7 +166,7 @@ const MineGrid = () => {
 
   const goTurn = (iRow: number, iCol: number) => {
     //already lost.
-    if (isLose) {
+    if (state.isLost) {
       return;
     }
 
@@ -272,7 +278,10 @@ const MineGrid = () => {
   ) => {
     console.log("onLoseCondition");
 
-    setIsLose(true);
+    // setIsLose(true);
+    dispatch({ type: GameActionType.TOGGLE_LOST });
+
+    
     setGameState(GameState.LOSE);
 
     // setIsGameStarted(false);
@@ -292,18 +301,6 @@ const MineGrid = () => {
   return (
     <section>
       <GameSizeChooser onGameSizeChange={handleGameSizeChange} />
-      {/* TODO: componentize below */}
-      {/* <select
-        id="choose-game-size"
-        className={styles["wide"]}
-        onChange={handleGameSizeChange}
-      >
-        {Object.keys(GameSizes).map((size) => (
-          <option className={styles["cap"]} key={size} value={size}>
-            {size}
-          </option>
-        ))}
-      </select> */}
 
       <article id="wrap-row-digital-display-reset">
         <DigitalDisplay
@@ -318,6 +315,8 @@ const MineGrid = () => {
         <div id="reset" className={styles["wrap-reset"]}>
           <button className={"square"} onClick={handleOnClickResetGrid}>
             {gameState && <span>{gameState}</span>}
+
+            
           </button>
         </div>
 
