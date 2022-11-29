@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import MineCell from "../MineCell/MineCell";
 import styles from "./MineGrid.module.scss";
 import {
+  existsCell,
+  getGameSize,
   getMineData,
   getMineDataOneDim,
   isLoseCondition,
@@ -10,69 +12,65 @@ import {
   placeNumAdjMineData,
   uncoverAdjacentZeroSqs,
 } from "../../utils/mineSetup";
-import { CellData, GameTypes } from "../../types/mineTypes";
+import {
+  CellData,
+  GameTypes,
+  GameState,
+  GameConfig,
+  GameTypesKeys,
+} from "../../types/mineTypes";
 import { GameSizes } from "../../utils/mineSetupData";
 import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
 import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountup";
+import GameSizeChooser from "../GameSizeChooser/GameSizeChooser";
 
 const MineGrid = () => {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isLose, setIsLose] = useState(false);
-
+  const [gameState, setGameState] = useState(GameState.UNSTARTED);
 
   const [mineData, setMineData] = useState<CellData[][]>([]);
-  const [gridSize, setGridSize] = useState("beginner");
+  const [gridSize, setGridSize] = useState("beginner" as GameTypesKeys);
   const [cellsUncovered, setCellsUncovered] = useState(0);
   const [flagsPlaced, setFlagsPlaced] = useState(0);
 
   //---use effects
   useEffect(() => {
-    let numRows = GameSizes[gridSize as keyof GameTypes].rows;
-    let numCols = GameSizes[gridSize as keyof GameTypes].cols;
-    let numMines = GameSizes[gridSize as keyof GameTypes].mines;
-
-    setMineData(getMineData(numRows, numCols, numMines));
+    const { rows, cols, mines } = getGameSize(gridSize);
+    setMineData(getMineData(rows, cols, mines));
   }, []);
 
   const handleLeftClick = (iRow: number, iCol: number) => {
     console.log("left click yo", mineData, iRow, iCol);
-    if (cellsUncovered === 0) {
+    setGameState(GameState.PLAY);
 
-      //not working either.... kickstart the display countup.
-      // setIsGameStarted(() => { return true });
+    if (cellsUncovered === 0) {
       setIsGameStarted(true);
 
+      const { rows, cols, mines } = getGameSize(gridSize);
 
-      let numRows = GameSizes[gridSize as keyof GameTypes].rows;
-      let numCols = GameSizes[gridSize as keyof GameTypes].cols;
-      let numMines = GameSizes[gridSize as keyof GameTypes].mines;
-
-      let mineDataLocal = placeMines(
-        mineData,
-        numRows,
-        numCols,
-        numMines,
-        iRow,
-        iCol
-      );
+      let mineDataLocal = placeMines(mineData, rows, cols, mines, iRow, iCol);
       mineDataLocal = placeNumAdjMineData(mineDataLocal);
       setMineData(mineDataLocal);
     }
     goTurn(iRow, iCol);
   };
 
-  const handleRightClick = (iRow: number, iCol: number) => {
-    console.log("right click yo");
-    console.log("right click yo", mineData, iRow, iCol);
-
-    setCellMark(iRow, iCol, mineData);
+  const handleLeftOnMouseDown = (iRow: number, iCol: number) => {
+    console.log("mousedown");
+    setGameState(GameState.DANGER);
   };
 
+  const handleRightClick = (iRow: number, iCol: number) => {
+    setCellMarkOld(iRow, iCol, mineData);
+  };
+
+  /**when the timer countup says we are out of time.  */
   const handleTimeout = (msg: string) => {
-    // const msg = "timeout yo";
     console.log(msg);
-    alert(msg);
+    //alert(msg);
+    onLoseCondition(-1, -1, mineData);
   };
 
   //just marks as bomb on 1st right click, as question on 2nd and clears on third,
@@ -81,7 +79,7 @@ const MineGrid = () => {
     iCol: number,
     mineData: CellData[][]
   ): void => {
-    console.log("right click?????????????", iRow, iCol);
+    console.log("right click olde?????????????", iRow, iCol);
 
     const cell = mineData[iRow][iCol];
 
@@ -122,12 +120,11 @@ const MineGrid = () => {
     let ret = placeCellMark(iRow, iCol, mineData);
     setFlagsPlaced(ret.flagsPlaced);
     setMineData(ret.mineData);
-
   };
 
-  const handleSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log("Size Selected!!", e.target.value);
-    setGridSize(e.target.value);
+  const handleGameSizeChange = (gameSizeName: GameTypesKeys) => {
+    console.log("Size Selected!!", gameSizeName);
+    setGridSize(gameSizeName);
   };
 
   /** gridSize dropdown changes, */
@@ -150,7 +147,7 @@ const MineGrid = () => {
     setFlagsPlaced(0);
     setMineData(getMineData(numRows, numCols, numMines));
     setIsGameStarted(false);
-    setIsGameOver(false)
+    setIsGameOver(false);
   };
 
   /**
@@ -214,7 +211,7 @@ const MineGrid = () => {
 
   /**
    * show whole board for win-lose
-   * @param mineData 
+   * @param mineData
    */
   const uncoverAllCells = (mineData: CellData[][]): void => {
     mineData.map((row, iRow) => {
@@ -261,6 +258,8 @@ const MineGrid = () => {
     console.log("onWinCondition");
 
     uncoverAllCells(mineData);
+    // setIsGameOver(true);
+    setGameState(GameState.WIN);
     window.setTimeout(() => {
       window.alert("epic Win!!!1111");
     }, 500);
@@ -274,11 +273,16 @@ const MineGrid = () => {
     console.log("onLoseCondition");
 
     setIsLose(true);
-// setIsGameStarted(false);
-setIsGameOver(true)
+    setGameState(GameState.LOSE);
 
+    // setIsGameStarted(false);
+    setIsGameOver(true);
 
-    mineData[iRow][iCol].markedAs = "exploded";
+    //if the game is over not because of click but
+    //because of timeout im sending -1 and cell wont exist
+    if (existsCell(mineData, iRow, iCol)) {
+      mineData[iRow][iCol].markedAs = "exploded";
+    }
     uncoverAllCells(mineData);
     window.setTimeout(() => {
       window.alert("boom!");
@@ -287,18 +291,19 @@ setIsGameOver(true)
 
   return (
     <section>
+      <GameSizeChooser onGameSizeChange={handleGameSizeChange} />
       {/* TODO: componentize below */}
-      <select
+      {/* <select
         id="choose-game-size"
         className={styles["wide"]}
-        onChange={handleSizeChange}
+        onChange={handleGameSizeChange}
       >
         {Object.keys(GameSizes).map((size) => (
-          <option key={size} value={size}>
+          <option className={styles["cap"]} key={size} value={size}>
             {size}
           </option>
         ))}
-      </select>
+      </select> */}
 
       <article id="wrap-row-digital-display-reset">
         <DigitalDisplay
@@ -311,17 +316,9 @@ setIsGameOver(true)
 
         {/* TODO: componentize below */}
         <div id="reset" className={styles["wrap-reset"]}>
-          {isLose && (
-            <button className={"square"} onClick={handleOnClickResetGrid}>
-              :&#40;
-            </button>
-          )}
-          {!isLose && (
-            <button className={"square"} onClick={handleOnClickResetGrid}>
-              :&#41;
-            </button>
-          )}
-          {isLose}
+          <button className={"square"} onClick={handleOnClickResetGrid}>
+            {gameState && <span>{gameState}</span>}
+          </button>
         </div>
 
         <DigitalDisplayCountup
@@ -343,6 +340,7 @@ setIsGameOver(true)
                 iRow={iRow}
                 iCol={iCol}
                 leftClick={handleLeftClick}
+                leftOnMouseDown={handleLeftOnMouseDown}
                 rightClick={handleRightClick}
               ></MineCell>
             ))}

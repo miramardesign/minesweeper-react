@@ -1,7 +1,7 @@
 import { GameTypes } from "../types/mineTypes";
 
 export const GameSizes: GameTypes = {
-    beginner: {
+    beginner:  {
       rows: 8,
       cols: 8,
       mines: 10,
@@ -17,3 +17,6 @@ export const GameSizes: GameTypes = {
       mines: 99,
     },
   };
+
+
+ 

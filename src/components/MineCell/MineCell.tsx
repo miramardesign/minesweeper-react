@@ -7,12 +7,14 @@ type MineCellProps = {
   iRow: number;
   iCol: number;
   leftClick: (iRow: number, iCol: number) => void;
+  leftOnMouseDown: (iRow: number, iCol: number) => void;
   rightClick: (iRow: number, iCol: number) => void;
 };
 
 const MineCell = ({
   cell,
   leftClick,
+  leftOnMouseDown,
   rightClick,
   iRow,
   iCol,
@@ -21,6 +23,12 @@ const MineCell = ({
   const handleOnClick = (e: React.MouseEvent<HTMLElement>) => {
     console.log("click in cell", e);
     leftClick(iRow, iCol);
+  };
+
+  const handleLeftOnMouseDown
+   = (e: React.MouseEvent<HTMLElement>) => {
+    console.log("click in leftOnMouseDown", e);
+    leftOnMouseDown(iRow, iCol);
   };
 
   const handleOnContextMenu = (e: React.MouseEvent<HTMLElement>) => {
@@ -45,6 +53,8 @@ const MineCell = ({
    
        `}
       onClick={handleOnClick}
+      onMouseDown={handleLeftOnMouseDown}
+
       onContextMenu={handleOnContextMenu}
     >
       {/* {cell.hasMine ? "💣" : "&nbsp;"} */}

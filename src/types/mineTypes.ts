@@ -41,3 +41,11 @@ export interface GameConfig {
   cols: number;
 }
 
+export type GameTypesKeys = Capitalize<keyof GameTypes>;
+
+export enum GameState{
+  UNSTARTED = ':)',
+  DANGER = ':()',
+  LOSE = ':(',
+  PLAY = ': )',
+}  

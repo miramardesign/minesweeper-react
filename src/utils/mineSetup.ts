@@ -1,4 +1,5 @@
-import { CellData, PerimeterDirections } from "../types/mineTypes";
+import { CellData, GameConfig, GameTypesKeys, PerimeterDirections } from "../types/mineTypes";
+import { GameSizes } from "./mineSetupData";
 
 const getRandInt = (min: number, max: number) => {
   return Math.floor(Math.random() * max);
@@ -266,7 +267,7 @@ const loopAdjCells = (
 };
 
 /**
- * generates an array with random mines and set h and w
+ * generates an array with empty mine data to the proscribed number of rows and cells
  * @param numRows
  * @param numCols
  * @param numMines
@@ -323,6 +324,11 @@ const getUncoveredCells = (mineData: CellData[][]): CellData[][] => {
   return mineData;
 };
 
+const getGameSize = (gridSize: GameTypesKeys) : GameConfig=> {
+  return GameSizes[gridSize];
+}
+
+
 export {
   getMineData,
   getMineDataOneDim,
@@ -333,4 +339,6 @@ export {
   placeMines,
   placeNumAdjMineData,
   placeCellMark,
+  existsCell,
+  getGameSize,
 };
