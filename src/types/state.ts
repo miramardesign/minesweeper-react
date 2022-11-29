@@ -8,7 +8,7 @@ export type GameState = {
 
 export enum GameActionType {
   TOGGLE_LOST = "TOGGLE_LOST",
-  UNCOVER_CELL = "UNCOVER_CELL",
+  UPDATE_UNCOVER_CELL = "UPDATE_UNCOVER_CELL",
   CHOOSE_SIZE = "CHOOSE_SIZE",
 }
 
@@ -18,7 +18,7 @@ type ToggleLostAction = {
 };
 
 type UncoverCellAction = {
-  type: GameActionType.UNCOVER_CELL;
+  type: GameActionType.UPDATE_UNCOVER_CELL;
   payload: number
 };
 

@@ -7,10 +7,10 @@ import {
   getMineData,
   getMineDataOneDim,
   isLoseCondition,
+  loopAdjCells,
   placeCellMark,
   placeMines,
   placeNumAdjMineData,
-  uncoverAdjacentZeroSqs,
 } from "../../utils/mineSetup";
 import {
   CellData,
@@ -29,15 +29,14 @@ import { GameActionType } from "../../types/state";
 const MineGrid = () => {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
-  // const [isLose, setIsLose] = useState(false);
   const [gameState, setGameState] = useState(GameState.UNSTARTED);
 
   const [mineData, setMineData] = useState<CellData[][]>([]);
-  // const [gridSize, setGridSize] = useState("beginner" as GameTypesKeys);
-  const [cellsUncovered, setCellsUncovered] = useState(0);
+  // const [cellsUncovered, setCellsUncovered] = useState(0);
   const [flagsPlaced, setFlagsPlaced] = useState(0);
-  const { state, dispatch } = useContext(GameContext);
 
+
+  const { state, dispatch } = useContext(GameContext);
 
   //---use effects
   useEffect(() => {
@@ -49,7 +48,7 @@ const MineGrid = () => {
     console.log("left click yo", mineData, iRow, iCol);
     setGameState(GameState.PLAY);
 
-    if (cellsUncovered === 0) {
+    if (state.uncoveredCells === 0) {
       setIsGameStarted(true);
 
       const { rows, cols, mines } = getGameSize(state.gridSize);
@@ -140,9 +139,11 @@ const MineGrid = () => {
     // setIsLose(false);
     dispatch({ type: GameActionType.TOGGLE_LOST });
   
-    const { rows, cols, mines } = getGameSize(state.gridSize);
+    const { rows, cols, mines } = getGameSize(gridSize);
 
-    setCellsUncovered(0);
+    //setCellsUncovered(0);
+    dispatch({ type: GameActionType.UPDATE_UNCOVER_CELL, payload: 0});
+    
     setFlagsPlaced(0);
     setMineData(getMineData(rows, cols, mines));
     setIsGameStarted(false);
@@ -194,7 +195,8 @@ const MineGrid = () => {
 
     mineData[iRow][iCol].uncovered = true;
 
-    setCellsUncovered(cellsUncovered + 1);
+    //setCellsUncovered(cellsUncovered + 1);
+    dispatch({ type: GameActionType.UPDATE_UNCOVER_CELL, payload: state.uncoveredCells + 1});
 
     mineData[iRow][iCol].markedAs = "uncovered";
 
@@ -235,8 +237,11 @@ const MineGrid = () => {
     mineData: CellData[][],
     numMines: number
   ) => {
-    0;
-    //join rows together... so i can scan once.
+    
+
+    //should really use the states uncovered length, but i have to make sure it increments on
+    //adjacent 0 cells recursively uncovering cells.
+    
     const allCells: CellData[] = getMineDataOneDim(mineData);
     const allCellsNoMineLen = allCells.length - numMines;
     const unconveredLen = allCells.filter((cell) => cell.uncovered).length;
@@ -291,10 +296,56 @@ const MineGrid = () => {
     }, 500);
   };
 
+
+/**
+ * probably need to loop via...
+ * @param iRow
+ * @param iCol
+ */
+ const uncoverAdjacentZeroSqs = (
+  iRow: number,
+  iCol: number,
+  mineData: CellData[][]
+) => {
+  if (mineData[iRow][iCol].numAdjMines === 0) {
+
+    //console.log("todo uncover zero cells near here");
+    loopAdjCells(
+      mineData,
+      iRow,
+      iCol,
+      (mineData: CellData[][], iRow: number, iCol: number) => {
+        // console.log('cb', mineData, iRow, iCol);
+
+        let cell = mineData[iRow][iCol];
+        if (cell.numAdjMines < 4) {
+          if (!cell.uncovered) {
+
+            //IMPORTANT increment state.uncovered cells~~~
+            cell.uncovered = true;
+
+            //not working!
+            dispatch({ type: GameActionType.UPDATE_UNCOVER_CELL, payload: state.uncoveredCells + 1});
+
+
+            //call neighborcells recursion!!---
+            uncoverAdjacentZeroSqs(iRow, iCol, mineData);
+          }
+        }
+      }
+    );
+  }       
+
+  return mineData;
+};
+
+
+
   return (
     <section>
       <GameSizeChooser  />
      state gridsize???-==== {state.gridSize}
+     state uncoveredCells???-==== {state.uncoveredCells}
 
       <article id="wrap-row-digital-display-reset">
         <DigitalDisplay

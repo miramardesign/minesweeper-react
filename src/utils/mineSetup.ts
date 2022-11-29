@@ -182,42 +182,9 @@ const isMine = (iRow: number, iCol: number, mineData: CellData[][]) => {
   return mineData[iRow][iCol].hasMine;
 };
 
-/**
- * probably need to loop via...
- * @param iRow
- * @param iCol
- */
-const uncoverAdjacentZeroSqs = (
-  iRow: number,
-  iCol: number,
-  mineData: CellData[][]
-) => {
-  if (mineData[iRow][iCol].numAdjMines === 0) {
-    console.log("todo uncover zero cells near here");
-    loopAdjCells(
-      mineData,
-      iRow,
-      iCol,
-      (mineData: CellData[][], iRow: number, iCol: number) => {
-        // console.log('cb', mineData, iRow, iCol);
 
-        let cell = mineData[iRow][iCol];
-        if (cell.numAdjMines < 4) {
-          if (!cell.uncovered) {
-            cell.uncovered = true;
 
-            //call neighborcells recursion!!---
-            uncoverAdjacentZeroSqs(iRow, iCol, mineData);
-          }
-        }
-      }
-    );
-  }
-    
-    
 
-  return mineData;
-};
 
 /**
  * run a cb on every adj cell of a given cell by iCol and iRow
@@ -258,7 +225,6 @@ const loopAdjCells = (
   };
 
   Object.entries(perimeter).forEach(([key, cell], index) => {
-    // console.log(key, '-----direction', cell);
 
     if (existsCell(mineData, cell.iRow, cell.iCol)) {
       cb(mineData, cell.iRow, cell.iCol);
@@ -333,7 +299,6 @@ export {
   getMineData,
   getMineDataOneDim,
   isMine,
-  uncoverAdjacentZeroSqs,
   isLoseCondition,
   getUncoveredCells,
   placeMines,
@@ -341,4 +306,5 @@ export {
   placeCellMark,
   existsCell,
   getGameSize,
+  loopAdjCells,
 };

@@ -32,10 +32,10 @@ const reducer = (state: GameState, action: GameActions): GameState => {
         ...state,
         isLost: !state.isLost,
       };
-    case GameActionType.UNCOVER_CELL:
+    case GameActionType.UPDATE_UNCOVER_CELL:
       return {
         ...state,
-        uncoveredCells: state.uncoveredCells +1,
+        uncoveredCells: action.payload,
       };
     case GameActionType.CHOOSE_SIZE:
       return {
