@@ -1,15 +1,16 @@
-import React from "react";
+import React, { useContext } from "react";
+import { GameContext } from "../../contexts/GameProvider";
 import { GameTypesKeys } from "../../types/mineTypes";
+import { GameActionType } from "../../types/state";
 import { GameSizes } from "../../utils/mineSetupData";
 import styles from "./GameSizeChooser.module.scss";
 
-type GameSizeChooserProps = {
-  onGameSizeChange: (gameSizeName: GameTypesKeys) => void;
-};
+const GameSizeChooser = () => {
 
-const GameSizeChooser = ({ onGameSizeChange }: GameSizeChooserProps) => {
+  const {  dispatch } = useContext(GameContext);
+
   const handleGameSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onGameSizeChange(e.target.value as GameTypesKeys);
+    dispatch( {type: GameActionType.CHOOSE_SIZE, payload: e.target.value as GameTypesKeys})
   };
 
   return (

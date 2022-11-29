@@ -4,6 +4,7 @@ import { GameActions, GameActionType, GameState } from "../types/state";
 const initialState: GameState = {
   isLost: false,
   uncoveredCells: 0,
+  gridSize: "beginner",
 };
 
 export const GameContext = createContext<{

@@ -33,15 +33,15 @@ const MineGrid = () => {
   const [gameState, setGameState] = useState(GameState.UNSTARTED);
 
   const [mineData, setMineData] = useState<CellData[][]>([]);
-  const [gridSize, setGridSize] = useState("beginner" as GameTypesKeys);
+  // const [gridSize, setGridSize] = useState("beginner" as GameTypesKeys);
   const [cellsUncovered, setCellsUncovered] = useState(0);
   const [flagsPlaced, setFlagsPlaced] = useState(0);
-
   const { state, dispatch } = useContext(GameContext);
+
 
   //---use effects
   useEffect(() => {
-    const { rows, cols, mines } = getGameSize(gridSize);
+    const { rows, cols, mines } = getGameSize(state.gridSize);
     setMineData(getMineData(rows, cols, mines));
   }, []);
 
@@ -52,7 +52,7 @@ const MineGrid = () => {
     if (cellsUncovered === 0) {
       setIsGameStarted(true);
 
-      const { rows, cols, mines } = getGameSize(gridSize);
+      const { rows, cols, mines } = getGameSize(state.gridSize);
 
       let mineDataLocal = placeMines(mineData, rows, cols, mines, iRow, iCol);
       mineDataLocal = placeNumAdjMineData(mineDataLocal);
@@ -126,32 +126,25 @@ const MineGrid = () => {
     setMineData(ret.mineData);
   };
 
-  const handleGameSizeChange = (gameSizeName: GameTypesKeys) => {
-    console.log("Size Selected!!", gameSizeName);
-    setGridSize(gameSizeName);
-  };
-
   /** gridSize dropdown changes, */
   useEffect(() => {
-    console.log("gridsized changed.............", gridSize);
-    resetGrid(gridSize);
-  }, [gridSize]);
+    console.log("gridsized changed.............",state.gridSize);
+    resetGrid(state.gridSize);
+  }, [state.gridSize]);
 
   /**
    * may have to reset counters here.
    * @param gridSize
    */
-  const resetGrid = (gridSize: String) => {
+  const resetGrid = (gridSize: GameTypesKeys) => {
     // setIsLose(false);
     dispatch({ type: GameActionType.TOGGLE_LOST });
-
-    let numRows = GameSizes[gridSize as keyof GameTypes].rows;
-    let numCols = GameSizes[gridSize as keyof GameTypes].cols;
-    let numMines = GameSizes[gridSize as keyof GameTypes].mines;
+  
+    const { rows, cols, mines } = getGameSize(state.gridSize);
 
     setCellsUncovered(0);
     setFlagsPlaced(0);
-    setMineData(getMineData(numRows, numCols, numMines));
+    setMineData(getMineData(rows, cols, mines));
     setIsGameStarted(false);
     setIsGameOver(false);
   };
@@ -160,8 +153,8 @@ const MineGrid = () => {
    * smiley face / frowny face clicked.
    * @param e event of clicked element.
    */
-  const handleOnClickResetGrid = (e: React.MouseEvent<HTMLElement>) => {
-    resetGrid(gridSize);
+  const handleOnClickResetGrid = () => {
+    resetGrid(state.gridSize);
   };
 
   const goTurn = (iRow: number, iCol: number) => {
@@ -172,7 +165,7 @@ const MineGrid = () => {
 
     console.log("clicked row ", iRow, "col", iCol);
 
-    uncoverCell(iRow, iCol, mineData, gridSize);
+    uncoverCell(iRow, iCol, mineData, state.gridSize);
   };
 
   /**
@@ -187,7 +180,7 @@ const MineGrid = () => {
     iRow: number,
     iCol: number,
     mineData: CellData[][],
-    gridSize: string
+    gridSize: GameTypesKeys,
   ) => {
     if (isLoseCondition(iRow, iCol, mineData)) {
       onLoseCondition(iRow, iCol, mineData);
@@ -208,7 +201,7 @@ const MineGrid = () => {
     uncoverAdjacentZeroSqs(iRow, iCol, mineData);
     setMineData(mineData);
 
-    let numMines = GameSizes[gridSize as keyof GameTypes].mines;
+    let numMines = GameSizes[gridSize].mines;
 
     if (isWinCondition(iRow, iCol, mineData, numMines)) {
       onWinCondition();
@@ -265,7 +258,7 @@ const MineGrid = () => {
 
     uncoverAllCells(mineData);
     // setIsGameOver(true);
-    setGameState(GameState.WIN);
+    setGameState(GameState.PLAY);
     window.setTimeout(() => {
       window.alert("epic Win!!!1111");
     }, 500);
@@ -300,13 +293,14 @@ const MineGrid = () => {
 
   return (
     <section>
-      <GameSizeChooser onGameSizeChange={handleGameSizeChange} />
+      <GameSizeChooser  />
+     state gridsize???-==== {state.gridSize}
 
       <article id="wrap-row-digital-display-reset">
         <DigitalDisplay
           id={"mines-remaining"}
           displayNum={
-            GameSizes[gridSize as keyof GameTypes].mines - flagsPlaced
+            GameSizes[state.gridSize ].mines - flagsPlaced
           }
         ></DigitalDisplay>
         <br />
@@ -315,8 +309,6 @@ const MineGrid = () => {
         <div id="reset" className={styles["wrap-reset"]}>
           <button className={"square"} onClick={handleOnClickResetGrid}>
             {gameState && <span>{gameState}</span>}
-
-            
           </button>
         </div>
 
