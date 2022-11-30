@@ -309,10 +309,10 @@ const MineGrid = () => {
       //not working!
       //console.log("todo uncover zero cells near here");
       loopAdjCells(
-        mineData,
         iRow,
         iCol,
-        (mineData: CellData[][], iRow: number, iCol: number) => {
+        mineData,
+        ( iRow: number, iCol: number, mineData: CellData[][]) => {
           // console.log('cb', mineData, iRow, iCol);
 
           let cell = mineData[iRow][iCol];
@@ -321,11 +321,12 @@ const MineGrid = () => {
           const minSiblingMines = 4;
 
           if (cell.numAdjMines < minSiblingMines) {
+
+            //dont hit already it mines...
             if (!cell.uncovered) {
               //IMPORTANT increment state.uncovered cells~~~
               cell.uncovered = true;
               
-
               console.log("state.uncoveredCells.----------------", state.uncoveredCells, '-------------------');
               dispatch({
                 type: GameActionType.INCREMENT_UNCOVER_CELL

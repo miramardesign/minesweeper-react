@@ -1,11 +1,16 @@
-import { CellData, GameConfig, GameTypesKeys, PerimeterDirections } from "../types/mineTypes";
+import {
+  CellData,
+  GameConfig,
+  GameTypesKeys,
+  PerimeterDirections,
+} from "../types/mineTypes";
 import { GameSizes } from "./mineSetupData";
 
 const getRandInt = (min: number, max: number) => {
   return Math.floor(Math.random() * max);
 };
 
-const existsCell = (mineData: CellData[][], iRow: number, iCol: number) => {
+const existsCell = ( iRow: number, iCol: number, mineData: CellData[][]) => {
   // console.log('existscelllllllllllllll', iRow);
   //row doesnt exist
   if (mineData[iRow] === undefined) {
@@ -39,20 +44,20 @@ const placeMines = (
 ) => {
   let minesPlacedLocal = 0;
 
-
   while (minesPlacedLocal < numMines) {
     let rowRand = getRandInt(0, numRows);
     let colRand = getRandInt(0, numCols);
 
-    if (existsCell(mineData, rowRand, colRand)) {
+    if (existsCell(rowRand, colRand, mineData)) {
       let cell = mineData[rowRand][colRand];
 
       //TODO exclude the first clicked cell, from bombs placed.
-      const isInitialCell = rowRand === rowInitialCell || colRand === colInitialCell;
+      const isInitialCell =
+        rowRand === rowInitialCell || colRand === colInitialCell;
 
       //choose other celll.
-      if (cell.hasMine || isInitialCell  ) {
-     // if (cell.hasMine) {
+      if (cell.hasMine || isInitialCell) {
+        // if (cell.hasMine) {
         console.log("mine collision");
       } else {
         cell.hasMine = true;
@@ -75,13 +80,13 @@ const placeNumAdjMineData = (mineData: CellData[][]) => {
     row.map((cell, iCol) => {
       cell.numAdjMines = 0;
       loopAdjCells(
-        mineData,
         iRow,
         iCol,
-        (mineData: CellData[][], iRow: number, iCol: number) => {
+        mineData,
+        ( iRow: number, iCol: number, mineData: CellData[][]) => {
           // console.log('cb', mineData, iRow, iCol);
 
-          if (existsAndIsMine(mineData, iRow, iCol)) {
+          if (existsAndIsMine(iRow, iCol, mineData)) {
             cell.numAdjMines++;
           }
         }
@@ -92,76 +97,74 @@ const placeNumAdjMineData = (mineData: CellData[][]) => {
   return mineData;
 };
 
-  
-  /**
-   * just marks as bomb on 1st right click, as question on 2nd and clears on third,
-   * @param iRow 
-   * @param iCol 
-   * @param mineData 
-   * @returns 
-   */
-  const placeCellMark = (
-    iRow: number,
-    iCol: number,
-    mineData: CellData[][]
-  ): any => {
-    console.log("right click?????????????", iRow, iCol);
+/**
+ * just marks as bomb on 1st right click, as question on 2nd and clears on third,
+ * @param iRow
+ * @param iCol
+ * @param mineData
+ * @returns
+ */
+const placeCellMark = (
+  iRow: number,
+  iCol: number,
+  mineData: CellData[][]
+): any => {
+  console.log("right click?????????????", iRow, iCol);
 
-    const cell = mineData[iRow][iCol];
-    let flagsPlaced = 0;
+  const cell = mineData[iRow][iCol];
+  let flagsPlaced = 0;
 
-    if (cell.uncovered) {
-      return;
+  if (cell.uncovered) {
+    return;
+  }
+
+  switch (cell.markedAs) {
+    case "": {
+      cell.markedAs = "flag";
+
+      // setFlagsPlaced(flagsPlaced + 1);
+      flagsPlaced = 1;
+      //its really a flag, the mines are only shown on lose.
+
+      break;
     }
-
-    switch (cell.markedAs) {
-      case "": {
-        cell.markedAs = "flag";
-
-       // setFlagsPlaced(flagsPlaced + 1);
-       flagsPlaced = 1;
-        //its really a flag, the mines are only shown on lose.
-
-        break;
-      }
-      case "flag": {
-       // setFlagsPlaced(flagsPlaced - 1);
-       flagsPlaced = -1;
-        cell.markedAs = "question";
-        break;
-      }
-      case "question": {
-        cell.markedAs = "";
-        break;
-      }
-      default: {
-        console.log("Empty action received.");
-      }
+    case "flag": {
+      // setFlagsPlaced(flagsPlaced - 1);
+      flagsPlaced = -1;
+      cell.markedAs = "question";
+      break;
     }
-
-    return {
-      flagsPlaced: flagsPlaced,
-      mineData: mineData,
+    case "question": {
+      cell.markedAs = "";
+      break;
     }
+    default: {
+      console.log("Empty action received.");
+    }
+  }
 
+  return {
+    flagsPlaced: flagsPlaced,
+    mineData: mineData,
   };
-
+};
 
 /**
  * pass in a row and col and return if hasMine,
  * returning false if doesnt exist (so the edges dont fail)
- * @param mineData
  * @param iRow
  * @param iCol
+ * @param mineData
  * @returns
  */
 const existsAndIsMine = (
-  mineData: CellData[][],
   iRow: number,
-  iCol: number
+  iCol: number,
+  mineData: CellData[][],
+
 ) => {
   //depp bc looper already calls.
-  if (!existsCell(mineData, iRow, iCol)) {
+  if (!existsCell(iRow, iCol, mineData)) {
     return false;
   }
 
@@ -182,22 +185,19 @@ const isMine = (iRow: number, iCol: number, mineData: CellData[][]) => {
   return mineData[iRow][iCol].hasMine;
 };
 
-
-
-
-
 /**
  * run a cb on every adj cell of a given cell by iCol and iRow
- * @param mineData
  * @param iRow
  * @param iCol
+ * @param mineData
  * @param cb
  */
 const loopAdjCells = (
-  mineData: CellData[][],
   iRow: number,
   iCol: number,
-  cb: any
+  mineData: CellData[][],
+  // cb: any,
+  cb: ( iRow: number, iCol: number, mineData: CellData[][]) => void,
 ) => {
   let perimeter: PerimeterDirections = {
     northWest: {
@@ -225,9 +225,8 @@ const loopAdjCells = (
   };
 
   Object.entries(perimeter).forEach(([key, cell], index) => {
-
-    if (existsCell(mineData, cell.iRow, cell.iCol)) {
-      cb(mineData, cell.iRow, cell.iCol);
+    if (existsCell( cell.iRow, cell.iCol, mineData)) {
+      cb(cell.iRow, cell.iCol, mineData);
     }
   });
 };
@@ -290,10 +289,9 @@ const getUncoveredCells = (mineData: CellData[][]): CellData[][] => {
   return mineData;
 };
 
-const getGameSize = (gridSize: GameTypesKeys) : GameConfig=> {
+const getGameSize = (gridSize: GameTypesKeys): GameConfig => {
   return GameSizes[gridSize];
-}
-
+};
 
 export {
   getMineData,
