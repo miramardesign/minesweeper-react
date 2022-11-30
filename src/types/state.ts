@@ -9,6 +9,7 @@ export type GameState = {
 export enum GameActionType {
   TOGGLE_LOST = "TOGGLE_LOST",
   UPDATE_UNCOVER_CELL = "UPDATE_UNCOVER_CELL",
+  INCREMENT_UNCOVER_CELL = "INCREMENT_UNCOVER_CELL",
   CHOOSE_SIZE = "CHOOSE_SIZE",
 }
 
@@ -22,6 +23,10 @@ type UncoverCellAction = {
   payload: number
 };
 
+type IncrementUncoverCellAction = {
+  type: GameActionType.INCREMENT_UNCOVER_CELL;
+};
+
 //discrimination unions..
 type ChooseGridSizeAction = {
   type: GameActionType.CHOOSE_SIZE;
@@ -31,4 +36,5 @@ type ChooseGridSizeAction = {
 export type GameActions =
   | ToggleLostAction
   | UncoverCellAction
+  | IncrementUncoverCellAction
   | ChooseGridSizeAction;

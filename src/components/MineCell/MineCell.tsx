@@ -21,19 +21,19 @@ const MineCell = ({
 }: MineCellProps) => {
 
   const handleOnClick = (e: React.MouseEvent<HTMLElement>) => {
-    console.log("click in cell", e);
+    // console.log("click in cell", e);
     leftClick(iRow, iCol);
   };
 
   const handleLeftOnMouseDown
    = (e: React.MouseEvent<HTMLElement>) => {
-    console.log("click in leftOnMouseDown", e);
+    // console.log("click in leftOnMouseDown", e);
     leftOnMouseDown(iRow, iCol);
   };
 
   const handleOnContextMenu = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
-    console.log("context menu right click in cell", e);
+    // console.log("context menu right click in cell", e);
 
     rightClick(iRow, iCol);
   };

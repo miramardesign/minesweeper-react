@@ -37,6 +37,11 @@ const reducer = (state: GameState, action: GameActions): GameState => {
         ...state,
         uncoveredCells: action.payload,
       };
+    case GameActionType.INCREMENT_UNCOVER_CELL:
+      return {
+        ...state,
+        uncoveredCells: state.uncoveredCells + 1,
+      };
     case GameActionType.CHOOSE_SIZE:
       return {
         ...state,
