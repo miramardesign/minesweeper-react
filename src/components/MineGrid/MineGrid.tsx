@@ -35,7 +35,6 @@ const MineGrid = () => {
   // const [cellsUncovered, setCellsUncovered] = useState(0);
   const [flagsPlaced, setFlagsPlaced] = useState(0);
 
-
   const { state, dispatch } = useContext(GameContext);
 
   //---use effects
@@ -127,7 +126,7 @@ const MineGrid = () => {
 
   /** gridSize dropdown changes, */
   useEffect(() => {
-    console.log("gridsized changed.............",state.gridSize);
+    console.log("gridsized changed.............", state.gridSize);
     resetGrid(state.gridSize);
   }, [state.gridSize]);
 
@@ -138,12 +137,12 @@ const MineGrid = () => {
   const resetGrid = (gridSize: GameTypesKeys) => {
     // setIsLose(false);
     dispatch({ type: GameActionType.TOGGLE_LOST });
-  
+
     const { rows, cols, mines } = getGameSize(gridSize);
 
     //setCellsUncovered(0);
-    dispatch({ type: GameActionType.UPDATE_UNCOVER_CELL, payload: 0});
-    
+    dispatch({ type: GameActionType.UPDATE_UNCOVER_CELL, payload: 0 });
+
     setFlagsPlaced(0);
     setMineData(getMineData(rows, cols, mines));
     setIsGameStarted(false);
@@ -181,7 +180,7 @@ const MineGrid = () => {
     iRow: number,
     iCol: number,
     mineData: CellData[][],
-    gridSize: GameTypesKeys,
+    gridSize: GameTypesKeys
   ) => {
     if (isLoseCondition(iRow, iCol, mineData)) {
       onLoseCondition(iRow, iCol, mineData);
@@ -196,7 +195,10 @@ const MineGrid = () => {
     mineData[iRow][iCol].uncovered = true;
 
     //setCellsUncovered(cellsUncovered + 1);
-    dispatch({ type: GameActionType.UPDATE_UNCOVER_CELL, payload: state.uncoveredCells + 1});
+    dispatch({
+      type: GameActionType.UPDATE_UNCOVER_CELL,
+      payload: state.uncoveredCells + 1,
+    });
 
     mineData[iRow][iCol].markedAs = "uncovered";
 
@@ -237,11 +239,9 @@ const MineGrid = () => {
     mineData: CellData[][],
     numMines: number
   ) => {
-    
-
     //should really use the states uncovered length, but i have to make sure it increments on
     //adjacent 0 cells recursively uncovering cells.
-    
+
     const allCells: CellData[] = getMineDataOneDim(mineData);
     const allCellsNoMineLen = allCells.length - numMines;
     const unconveredLen = allCells.filter((cell) => cell.uncovered).length;
@@ -279,7 +279,6 @@ const MineGrid = () => {
     // setIsLose(true);
     dispatch({ type: GameActionType.TOGGLE_LOST });
 
-    
     setGameState(GameState.LOSE);
 
     // setIsGameStarted(false);
@@ -296,63 +295,62 @@ const MineGrid = () => {
     }, 500);
   };
 
+  /**
+   * probably need to loop via...
+   * @param iRow
+   * @param iCol
+   */
+  const uncoverAdjacentZeroSqs = (
+    iRow: number,
+    iCol: number,
+    mineData: CellData[][]
+  ) => {
+    if (mineData[iRow][iCol].numAdjMines === 0) {
+      //not working!
+      //console.log("todo uncover zero cells near here");
+      loopAdjCells(
+        mineData,
+        iRow,
+        iCol,
+        (mineData: CellData[][], iRow: number, iCol: number) => {
+          // console.log('cb', mineData, iRow, iCol);
 
-/**
- * probably need to loop via...
- * @param iRow
- * @param iCol
- */
- const uncoverAdjacentZeroSqs = (
-  iRow: number,
-  iCol: number,
-  mineData: CellData[][]
-) => {
-  if (mineData[iRow][iCol].numAdjMines === 0) {
+          let cell = mineData[iRow][iCol];
 
-    //console.log("todo uncover zero cells near here");
-    loopAdjCells(
-      mineData,
-      iRow,
-      iCol,
-      (mineData: CellData[][], iRow: number, iCol: number) => {
-        // console.log('cb', mineData, iRow, iCol);
+          //why 4? i forget. todo rename...
+          const minSiblingMines = 4;
 
-        let cell = mineData[iRow][iCol];
-        if (cell.numAdjMines < 4) {
-          if (!cell.uncovered) {
+          if (cell.numAdjMines < minSiblingMines) {
+            if (!cell.uncovered) {
+              //IMPORTANT increment state.uncovered cells~~~
+              cell.uncovered = true;
+              
 
-            //IMPORTANT increment state.uncovered cells~~~
-            cell.uncovered = true;
+              console.log("state.uncoveredCells.----------------", state.uncoveredCells, '-------------------');
+              dispatch({
+                type: GameActionType.INCREMENT_UNCOVER_CELL
+              });
 
-            //not working!
-            dispatch({ type: GameActionType.UPDATE_UNCOVER_CELL, payload: state.uncoveredCells + 1});
-
-
-            //call neighborcells recursion!!---
-            uncoverAdjacentZeroSqs(iRow, iCol, mineData);
+              //call neighborcells recursion!!---
+              uncoverAdjacentZeroSqs(iRow, iCol, mineData);
+            }
           }
         }
-      }
-    );
-  }       
+      );
+    }
 
-  return mineData;
-};
-
-
+    return mineData;
+  };
 
   return (
     <section>
-      <GameSizeChooser  />
-     state gridsize???-==== {state.gridSize}
-     state uncoveredCells???-==== {state.uncoveredCells}
-
+      <GameSizeChooser />
+      state gridsize???-==== {state.gridSize}
+      state uncoveredCells???-==== {state.uncoveredCells}
       <article id="wrap-row-digital-display-reset">
         <DigitalDisplay
           id={"mines-remaining"}
-          displayNum={
-            GameSizes[state.gridSize ].mines - flagsPlaced
-          }
+          displayNum={GameSizes[state.gridSize].mines - flagsPlaced}
         ></DigitalDisplay>
         <br />
 
