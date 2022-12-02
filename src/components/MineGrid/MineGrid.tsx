@@ -27,11 +27,9 @@ import GameStateButton from "../GameStateButton/GameStateButton";
 
 const MineGrid = () => {
   const [isGameStarted, setIsGameStarted] = useState(false);
-  const [isGameOver, setIsGameOver] = useState(false);
+  // const [isGameOver, setIsGameOver] = useState(false);
 
   const [mineData, setMineData] = useState<CellData[][]>([]);
-  // const [flagsPlaced, setFlagsPlaced] = useState(0);
-
   const { state, dispatch } = useContext(GameContext);
 
   //---use effects
@@ -155,8 +153,13 @@ const MineGrid = () => {
     const { rows, cols, mines } = getGameSize(gridSize);
 
     setMineData(getMineData(rows, cols, mines));
-    setIsGameStarted(false);
-    setIsGameOver(false);
+    // setIsGameStarted(false);
+    // setIsGameOver(false);
+   // dispatch({ type: GameActionType.TOGGLE_END });
+
+
+    dispatch({ type: GameActionType.SET_END, payload: false });
+
   };
 
   /**
@@ -272,8 +275,9 @@ const MineGrid = () => {
     console.log("onWinCondition");
 
     uncoverAllCells(mineData);
-    setIsGameOver(true);
-    // setGameState(GameStateDisplay.PLAY);
+    // setIsGameOver(true);
+    dispatch({ type: GameActionType.SET_END, payload: true });
+
     dispatch({
       type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
       payload: GameStateDisplay.PLAY,
@@ -291,15 +295,8 @@ const MineGrid = () => {
   ) => {
     console.log("onLoseCondition");
 
-    // setIsLose(true);
     dispatch({ type: GameActionType.TOGGLE_LOST });
-
-    // dispatch({
-    //   type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
-    //   payload: GameStateDisplay.LOSE,
-    // });
-
-    setIsGameOver(true);
+    dispatch({ type: GameActionType.SET_END, payload: true });
 
     //if the game is over not because of click but
     //because of timeout im sending -1 and cell wont exist
@@ -377,8 +374,8 @@ const MineGrid = () => {
         <DigitalDisplayCountup
           id={"time-counter"}
           timeoutCount={handleTimeout}
-          startCount={isGameStarted}
-          gameOver={isGameOver}
+          startCount={state.isGameStarted}
+          gameOver={state.isGameOver}
         ></DigitalDisplayCountup>
       </article>
       <br />

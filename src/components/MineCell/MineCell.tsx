@@ -1,5 +1,7 @@
-import React from "react";
-import { CellData } from "../../types/mineTypes";
+import React, { useContext } from "react";
+import { GameContext } from "../../contexts/GameProvider";
+import { CellData, GameStateDisplay } from "../../types/mineTypes";
+import { GameActionType } from "../../types/state";
 import styles from "./MineCell.module.scss";
 
 type MineCellProps = {
@@ -20,8 +22,17 @@ const MineCell = ({
   iCol,
 }: MineCellProps) => {
 
+  const { state, dispatch } = useContext(GameContext);
+
   const handleOnClick = (e: React.MouseEvent<HTMLElement>) => {
     // console.log("click in cell", e);
+
+    // dispatch({
+    //   type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
+    //   payload: GameStateDisplay.PLAY,
+    // });
+
+
     leftClick(iRow, iCol);
   };
 

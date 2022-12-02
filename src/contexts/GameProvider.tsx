@@ -4,6 +4,8 @@ import { GameActions, GameActionType, GameState } from "../types/state";
 
 export const initialState: GameState = {
   isLost: false,
+  isGameOver: false,
+  isGameStarted: false,
   uncoveredCells: 0,
   flagsPlaced: 0,
   gameStateDisplay: GameStateDisplay.UNSTARTED,
@@ -46,6 +48,16 @@ const reducer = (state: GameState, action: GameActions): GameState => {
         isLost: !state.isLost,
         gameStateDisplay: GameStateDisplay.LOSE
       };
+    case GameActionType.SET_START:
+      return {
+        ...state,
+        isGameStarted: action.payload,
+      };
+    case GameActionType.SET_END:
+      return {
+        ...state,
+        isGameOver: action.payload,
+      };  
     case GameActionType.UPDATE_UNCOVER_CELL:
       return {
         ...state,

@@ -2,6 +2,8 @@ import { GameStateDisplay, GameTypesKeys } from "./mineTypes";
 
 export type GameState = {
   isLost: boolean;
+  isGameOver: boolean;
+  isGameStarted: boolean;
   uncoveredCells: number;
   flagsPlaced: number
   gridSize: GameTypesKeys;
@@ -10,6 +12,8 @@ export type GameState = {
 
 export enum GameActionType {
   TOGGLE_LOST = "TOGGLE_LOST",
+  SET_START = "TOGGLE_START",
+  SET_END = "TOGGLE_END",
   UPDATE_UNCOVER_CELL = "UPDATE_UNCOVER_CELL",
   CHANGE_GAMESTATE_DISPLAY = "CHANGE_GAMESTATE_DISPLAY",
   INCREMENT_UNCOVER_CELL = "INCREMENT_UNCOVER_CELL",
@@ -22,6 +26,17 @@ export enum GameActionType {
 type ToggleLostAction = {
   type: GameActionType.TOGGLE_LOST;
   //no payload necessary as is bool
+};
+
+type StartGameAction = {
+  type: GameActionType.SET_START;
+  payload: boolean;
+
+};
+
+type EndGameAction = {
+  type: GameActionType.SET_END;
+  payload: boolean;
 };
 
 type UncoverCellAction = {
@@ -57,8 +72,11 @@ type ResetGameAction = {
   payload: GameState;
 };
 
+
 export type GameActions =
   | ToggleLostAction
+  | StartGameAction
+  | EndGameAction
   | UncoverCellAction
   | ChangeGameStateDisplay
   | IncrementUncoverCellAction
