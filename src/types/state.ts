@@ -1,15 +1,20 @@
-import { GameTypesKeys } from "./mineTypes";
+import { GameStateDisplay, GameTypesKeys } from "./mineTypes";
 
 export type GameState = {
   isLost: boolean;
   uncoveredCells: number;
+  flagsPlaced: number
   gridSize: GameTypesKeys;
+  gameStateDisplay: GameStateDisplay;
 };
 
 export enum GameActionType {
   TOGGLE_LOST = "TOGGLE_LOST",
   UPDATE_UNCOVER_CELL = "UPDATE_UNCOVER_CELL",
+  CHANGE_GAMESTATE_DISPLAY = "CHANGE_GAMESTATE_DISPLAY",
   INCREMENT_UNCOVER_CELL = "INCREMENT_UNCOVER_CELL",
+  INCREMENT_FLAGS_PLACED = "INCREMENT_FLAGS_PLACED",
+  DECREMENT_FLAGS_PLACED = "DECREMENT_FLAGS_PLACED",
   CHOOSE_SIZE = "CHOOSE_SIZE",
   RESET_GAME = "RESET_GAME",
 }
@@ -24,8 +29,21 @@ type UncoverCellAction = {
   payload: number;
 };
 
+type ChangeGameStateDisplay = {
+  type: GameActionType.CHANGE_GAMESTATE_DISPLAY;
+  payload: GameStateDisplay;
+};
+
 type IncrementUncoverCellAction = {
   type: GameActionType.INCREMENT_UNCOVER_CELL;
+};
+
+type IncrementFlagsPlaced = {
+  type: GameActionType.INCREMENT_FLAGS_PLACED;
+};
+
+type DecrementFlagsPlaced = {
+  type: GameActionType.DECREMENT_FLAGS_PLACED;
 };
 
 //discrimination unions..
@@ -42,6 +60,9 @@ type ResetGameAction = {
 export type GameActions =
   | ToggleLostAction
   | UncoverCellAction
+  | ChangeGameStateDisplay
   | IncrementUncoverCellAction
+  | IncrementFlagsPlaced
+  | DecrementFlagsPlaced
   | ChooseGridSizeAction
   | ResetGameAction;

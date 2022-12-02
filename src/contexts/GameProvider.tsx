@@ -1,12 +1,14 @@
 import React, { createContext, PropsWithChildren, useReducer } from "react";
+import { GameStateDisplay } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
 
 export const initialState: GameState = {
   isLost: false,
   uncoveredCells: 0,
+  flagsPlaced: 0,
+  gameStateDisplay: GameStateDisplay.UNSTARTED,
   gridSize: "beginner",
 };
-
 
 export const GameContext = createContext<{
   state: GameState;
@@ -29,17 +31,12 @@ export const GameProvider = ({ children }: PropsWithChildren) => {
 // https://reactjs.org/docs/hooks-reference.html#lazy-initialization
 /**
  * reset the game state...
- * @param initialState 
- * @returns 
+ * @param initialState
+ * @returns
  */
 const initReducer = (initialState: GameState) => {
-  return {
-    isLost: initialState.isLost,
-    uncoveredCells: initialState.uncoveredCells,
-    gridSize: initialState.gridSize,
-
-  };
-}
+  return initialState;
+};
 
 const reducer = (state: GameState, action: GameActions): GameState => {
   switch (action.type) {
@@ -47,16 +44,32 @@ const reducer = (state: GameState, action: GameActions): GameState => {
       return {
         ...state,
         isLost: !state.isLost,
+        gameStateDisplay: GameStateDisplay.LOSE
       };
     case GameActionType.UPDATE_UNCOVER_CELL:
       return {
         ...state,
         uncoveredCells: action.payload,
       };
+    case GameActionType.CHANGE_GAMESTATE_DISPLAY:
+      return {
+        ...state,
+        gameStateDisplay: action.payload,
+      };
     case GameActionType.INCREMENT_UNCOVER_CELL:
       return {
         ...state,
         uncoveredCells: state.uncoveredCells + 1,
+      };
+    case GameActionType.INCREMENT_FLAGS_PLACED:
+      return {
+        ...state,
+        flagsPlaced: state.flagsPlaced + 1,
+      };
+    case GameActionType.DECREMENT_FLAGS_PLACED:
+      return {
+        ...state,
+        flagsPlaced: state.flagsPlaced - 1,
       };
     case GameActionType.CHOOSE_SIZE:
       return {

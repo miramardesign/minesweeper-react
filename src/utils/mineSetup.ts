@@ -10,7 +10,7 @@ const getRandInt = (min: number, max: number) => {
   return Math.floor(Math.random() * max);
 };
 
-const existsCell = ( iRow: number, iCol: number, mineData: CellData[][]) => {
+const existsCell = (iRow: number, iCol: number, mineData: CellData[][]) => {
   // console.log('existscelllllllllllllll', iRow);
   //row doesnt exist
   if (mineData[iRow] === undefined) {
@@ -83,7 +83,7 @@ const placeNumAdjMineData = (mineData: CellData[][]) => {
         iRow,
         iCol,
         mineData,
-        ( iRow: number, iCol: number, mineData: CellData[][]) => {
+        (iRow: number, iCol: number, mineData: CellData[][]) => {
           // console.log('cb', mineData, iRow, iCol);
 
           if (existsAndIsMine(iRow, iCol, mineData)) {
@@ -112,7 +112,6 @@ const placeCellMark = (
   console.log("right click?????????????", iRow, iCol);
 
   const cell = mineData[iRow][iCol];
-  let flagsPlaced = 0;
 
   if (cell.uncovered) {
     return;
@@ -122,15 +121,9 @@ const placeCellMark = (
     case "": {
       cell.markedAs = "flag";
 
-      // setFlagsPlaced(flagsPlaced + 1);
-      flagsPlaced = 1;
-      //its really a flag, the mines are only shown on lose.
-
       break;
     }
     case "flag": {
-      // setFlagsPlaced(flagsPlaced - 1);
-      flagsPlaced = -1;
       cell.markedAs = "question";
       break;
     }
@@ -144,7 +137,6 @@ const placeCellMark = (
   }
 
   return {
-    flagsPlaced: flagsPlaced,
     mineData: mineData,
   };
 };
@@ -160,8 +152,7 @@ const placeCellMark = (
 const existsAndIsMine = (
   iRow: number,
   iCol: number,
-  mineData: CellData[][],
-
+  mineData: CellData[][]
 ) => {
   //depp bc looper already calls.
   if (!existsCell(iRow, iCol, mineData)) {
@@ -197,10 +188,9 @@ const loopAdjCells = (
   iCol: number,
   mineData: CellData[][],
   // cb: any,
-  cb: ( iRow: number, iCol: number, mineData: CellData[][]) => void,
+  cb: (iRow: number, iCol: number, mineData: CellData[][]) => void
 ) => {
   let perimeter: PerimeterDirections = {
-    
     northWest: {
       iRow: iRow - 1,
       iCol: iCol - 1,
@@ -226,7 +216,7 @@ const loopAdjCells = (
   };
 
   Object.entries(perimeter).forEach(([key, cell], index) => {
-    if (existsCell( cell.iRow, cell.iCol, mineData)) {
+    if (existsCell(cell.iRow, cell.iCol, mineData)) {
       cb(cell.iRow, cell.iCol, mineData);
     }
   });
@@ -290,6 +280,8 @@ const getUncoveredCells = (mineData: CellData[][]): CellData[][] => {
 const getGameSize = (gridSize: GameTypesKeys): GameConfig => {
   return GameSizes[gridSize];
 };
+
+
 
 export {
   getMineData,
