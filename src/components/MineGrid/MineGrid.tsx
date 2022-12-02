@@ -15,7 +15,7 @@ import {
 import {
   CellData,
   GameTypes,
-  GameState,
+  GameStateDisplay,
   GameConfig,
   GameTypesKeys,
 } from "../../types/mineTypes";
@@ -25,11 +25,12 @@ import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountu
 import GameSizeChooser from "../GameSizeChooser/GameSizeChooser";
 import { GameContext } from "../../contexts/GameProvider";
 import { GameActionType } from "../../types/state";
+import GameStateButton from "../GameStateButton/GameStateButton";
 
 const MineGrid = () => {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isGameOver, setIsGameOver] = useState(false);
-  const [gameState, setGameState] = useState(GameState.UNSTARTED);
+  const [gameStateDisplay, setGameState] = useState(GameStateDisplay.UNSTARTED);
 
   const [mineData, setMineData] = useState<CellData[][]>([]);
   // const [cellsUncovered, setCellsUncovered] = useState(0);
@@ -45,7 +46,7 @@ const MineGrid = () => {
 
   const handleLeftClick = (iRow: number, iCol: number) => {
     console.log("left click yo", mineData, iRow, iCol);
-    setGameState(GameState.PLAY);
+    setGameState(GameStateDisplay.PLAY);
 
     if (state.uncoveredCells === 0) {
       setIsGameStarted(true);
@@ -61,7 +62,7 @@ const MineGrid = () => {
 
   const handleLeftOnMouseDown = (iRow: number, iCol: number) => {
     console.log("mousedown");
-    setGameState(GameState.DANGER);
+    setGameState(GameStateDisplay.DANGER);
   };
 
   const handleRightClick = (iRow: number, iCol: number) => {
@@ -136,7 +137,11 @@ const MineGrid = () => {
    */
   const resetGrid = (gridSize: GameTypesKeys) => {
     // setIsLose(false);
-    dispatch({ type: GameActionType.TOGGLE_LOST });
+    //dispatch({ type: GameActionType.TOGGLE_LOST });
+    dispatch({
+      type: GameActionType.RESET_GAME,
+      payload: { isLost: false, uncoveredCells: 0, gridSize: gridSize },
+    });
 
     const { rows, cols, mines } = getGameSize(gridSize);
 
@@ -263,7 +268,7 @@ const MineGrid = () => {
 
     uncoverAllCells(mineData);
     // setIsGameOver(true);
-    setGameState(GameState.PLAY);
+    setGameState(GameStateDisplay.PLAY);
     window.setTimeout(() => {
       window.alert("epic Win!!!1111");
     }, 500);
@@ -279,14 +284,14 @@ const MineGrid = () => {
     // setIsLose(true);
     dispatch({ type: GameActionType.TOGGLE_LOST });
 
-    setGameState(GameState.LOSE);
+    setGameState(GameStateDisplay.LOSE);
 
     // setIsGameStarted(false);
     setIsGameOver(true);
 
     //if the game is over not because of click but
     //because of timeout im sending -1 and cell wont exist
-    if (existsCell(mineData, iRow, iCol)) {
+    if (existsCell( iRow, iCol, mineData)) {
       mineData[iRow][iCol].markedAs = "exploded";
     }
     uncoverAllCells(mineData);
@@ -312,7 +317,7 @@ const MineGrid = () => {
         iRow,
         iCol,
         mineData,
-        ( iRow: number, iCol: number, mineData: CellData[][]) => {
+        (iRow: number, iCol: number, mineData: CellData[][]) => {
           // console.log('cb', mineData, iRow, iCol);
 
           let cell = mineData[iRow][iCol];
@@ -321,15 +326,14 @@ const MineGrid = () => {
           const minSiblingMines = 4;
 
           if (cell.numAdjMines < minSiblingMines) {
-
-            //dont hit already it mines...
+            //dont hit already hit mines...
             if (!cell.uncovered) {
               //IMPORTANT increment state.uncovered cells~~~
               cell.uncovered = true;
-              
-              console.log("state.uncoveredCells.----------------", state.uncoveredCells, '-------------------');
+
+
               dispatch({
-                type: GameActionType.INCREMENT_UNCOVER_CELL
+                type: GameActionType.INCREMENT_UNCOVER_CELL,
               });
 
               //call neighborcells recursion!!---
@@ -356,9 +360,11 @@ const MineGrid = () => {
         <br />
 
         {/* TODO: componentize below */}
+        <GameStateButton gameStateDisplay={gameStateDisplay} resetGrid={handleOnClickResetGrid}></GameStateButton>
+        
         <div id="reset" className={styles["wrap-reset"]}>
           <button className={"square"} onClick={handleOnClickResetGrid}>
-            {gameState && <span>{gameState}</span>}
+            {gameStateDisplay && <span>{gameStateDisplay}</span>}
           </button>
         </div>
 
@@ -386,7 +392,7 @@ const MineGrid = () => {
               ></MineCell>
             ))}
           </div>
-        ))}{" "}
+        ))}
       </article>
     </section>
   );

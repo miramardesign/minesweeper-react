@@ -57,8 +57,7 @@ const MineCell = ({
 
       onContextMenu={handleOnContextMenu}
     >
-      {/* {cell.hasMine ? "💣" : "&nbsp;"} */}
-    </button>
+     </button>
   );
 };
 

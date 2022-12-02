@@ -43,7 +43,7 @@ export interface GameConfig {
 
 export type GameTypesKeys = keyof GameTypes;
 
-export enum GameState{
+export enum GameStateDisplay{
   UNSTARTED = ':)',
   DANGER = ':()',
   LOSE = ':(',

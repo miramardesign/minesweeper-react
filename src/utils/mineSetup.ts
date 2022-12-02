@@ -200,6 +200,7 @@ const loopAdjCells = (
   cb: ( iRow: number, iCol: number, mineData: CellData[][]) => void,
 ) => {
   let perimeter: PerimeterDirections = {
+    
     northWest: {
       iRow: iRow - 1,
       iCol: iCol - 1,
@@ -249,9 +250,6 @@ const getMineData = (numRows: number, numCols: number, numMines: number) => {
       };
     });
   });
-
-  // mineData = placeMines(mineData, numRows, numCols, numMines);
-  // mineData = setNumAdjMineData(mineData);
 
   return mineData;
 };
