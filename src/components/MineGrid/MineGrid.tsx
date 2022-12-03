@@ -24,35 +24,41 @@ import GameSizeChooser from "../GameSizeChooser/GameSizeChooser";
 import { GameContext, initialState } from "../../contexts/GameProvider";
 import { GameActionType } from "../../types/state";
 import GameStateButton from "../GameStateButton/GameStateButton";
-
+0
 const MineGrid = () => {
-  const [isGameStarted, setIsGameStarted] = useState(false);
+  // const [isGameStarted, setIsGameStarted] = useState(false);
   // const [isGameOver, setIsGameOver] = useState(false);
 
-  const [mineData, setMineData] = useState<CellData[][]>([]);
+ // const [mineData, setMineData] = useState<CellData[][]>([]);
   const { state, dispatch } = useContext(GameContext);
 
   //---use effects
   useEffect(() => {
     const { rows, cols, mines } = getGameSize(state.gridSize);
-    setMineData(getMineData(rows, cols, mines));
+    let mineDataLocal = getMineData(rows, cols, mines);
+    dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
+
+   // setMineData(getMineData(rows, cols, mines));
   }, []);
 
   const handleLeftClick = (iRow: number, iCol: number) => {
-    console.log("left click yo", mineData, iRow, iCol);
-    dispatch({
-      type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
-      payload: GameStateDisplay.PLAY,
-    });
+     // dispatch({
+    //   type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
+    //   payload: GameStateDisplay.PLAY,
+    // });
 
     if (state.uncoveredCells === 0) {
-      setIsGameStarted(true);
+      // setIsGameStarted(true);
+      dispatch({ type: GameActionType.SET_START, payload: true });
+
 
       const { rows, cols, mines } = getGameSize(state.gridSize);
-
-      let mineDataLocal = placeMines(mineData, rows, cols, mines, iRow, iCol);
+      let mineDataLocal = placeMines(state.mineData, rows, cols, mines, iRow, iCol);
       mineDataLocal = placeNumAdjMineData(mineDataLocal);
-      setMineData(mineDataLocal);
+
+      dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
+
+      //setMineData(mineDataLocal);
     }
     goTurn(iRow, iCol);
   };
@@ -66,14 +72,15 @@ const MineGrid = () => {
   };
 
   const handleRightClick = (iRow: number, iCol: number) => {
-    setCellMarkOld(iRow, iCol, mineData);
+    setCellMarkOld(iRow, iCol, state.mineData);
+
   };
 
   /**when the timer countup says we are out of time.  */
   const handleTimeout = (msg: string) => {
     console.log(msg);
     //alert(msg);
-    onLoseCondition(-1, -1, mineData);
+    onLoseCondition(-1, -1, state.mineData);
   };
 
   //just marks as bomb on 1st right click, as question on 2nd and clears on third,
@@ -152,7 +159,11 @@ const MineGrid = () => {
 
     const { rows, cols, mines } = getGameSize(gridSize);
 
-    setMineData(getMineData(rows, cols, mines));
+    let mineDataLocal = getMineData(rows, cols, mines);
+    dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
+
+   // setMineData(getMineData(rows, cols, mines));
+
     // setIsGameStarted(false);
     // setIsGameOver(false);
    // dispatch({ type: GameActionType.TOGGLE_END });
@@ -178,7 +189,7 @@ const MineGrid = () => {
 
     console.log("clicked row ", iRow, "col", iCol);
 
-    uncoverCell(iRow, iCol, mineData, state.gridSize);
+    uncoverCell(iRow, iCol, state.mineData, state.gridSize);
   };
 
   /**
@@ -216,7 +227,10 @@ const MineGrid = () => {
     mineData[iRow][iCol].markedAs = "uncovered";
 
     uncoverAdjacentZeroSqs(iRow, iCol, mineData);
-    setMineData(mineData);
+    //setMineData(mineData);
+   
+    dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineData });
+
 
     let numMines = GameSizes[gridSize].mines;
 
@@ -235,7 +249,9 @@ const MineGrid = () => {
         mineData[iRow][iCol].uncovered = true;
       });
     });
-    setMineData(mineData);
+   // setMineData(mineData);
+    dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineData });
+
   };
 
   /**
@@ -274,7 +290,8 @@ const MineGrid = () => {
   const onWinCondition = () => {
     console.log("onWinCondition");
 
-    uncoverAllCells(mineData);
+    uncoverAllCells(state.mineData);
+
     // setIsGameOver(true);
     dispatch({ type: GameActionType.SET_END, payload: true });
 
@@ -381,7 +398,7 @@ const MineGrid = () => {
       <br />
       <hr className={styles.break} />
       <article>
-        {mineData.map((row, iRow) => (
+        {state.mineData.map((row, iRow) => (
           <div key={iRow}>
             {row.map((col, iCol) => (
               <MineCell

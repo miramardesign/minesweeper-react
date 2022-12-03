@@ -27,10 +27,10 @@ const MineCell = ({
   const handleOnClick = (e: React.MouseEvent<HTMLElement>) => {
     // console.log("click in cell", e);
 
-    // dispatch({
-    //   type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
-    //   payload: GameStateDisplay.PLAY,
-    // });
+    dispatch({
+      type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
+      payload: GameStateDisplay.PLAY,
+    });
 
 
     leftClick(iRow, iCol);

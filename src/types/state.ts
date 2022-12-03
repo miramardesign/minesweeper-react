@@ -1,4 +1,4 @@
-import { GameStateDisplay, GameTypesKeys } from "./mineTypes";
+import { CellData, GameStateDisplay, GameTypesKeys, MineData } from "./mineTypes";
 
 export type GameState = {
   isLost: boolean;
@@ -8,6 +8,7 @@ export type GameState = {
   flagsPlaced: number
   gridSize: GameTypesKeys;
   gameStateDisplay: GameStateDisplay;
+  mineData: CellData[][];
 };
 
 export enum GameActionType {
@@ -21,6 +22,7 @@ export enum GameActionType {
   DECREMENT_FLAGS_PLACED = "DECREMENT_FLAGS_PLACED",
   CHOOSE_SIZE = "CHOOSE_SIZE",
   RESET_GAME = "RESET_GAME",
+  GET_MINE_DATA = "GET_MINE_DATA",
 }
 
 type ToggleLostAction = {
@@ -72,6 +74,11 @@ type ResetGameAction = {
   payload: GameState;
 };
 
+type GetMineDataAction = {
+  type: GameActionType.GET_MINE_DATA;
+  payload: CellData[][];
+};
+
 
 export type GameActions =
   | ToggleLostAction
@@ -83,4 +90,6 @@ export type GameActions =
   | IncrementFlagsPlaced
   | DecrementFlagsPlaced
   | ChooseGridSizeAction
-  | ResetGameAction;
+  | ResetGameAction
+  | GetMineDataAction;
+

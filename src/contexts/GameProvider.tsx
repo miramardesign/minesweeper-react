@@ -1,5 +1,5 @@
 import React, { createContext, PropsWithChildren, useReducer } from "react";
-import { GameStateDisplay } from "../types/mineTypes";
+import { CellData, GameStateDisplay } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
 
 export const initialState: GameState = {
@@ -10,6 +10,7 @@ export const initialState: GameState = {
   flagsPlaced: 0,
   gameStateDisplay: GameStateDisplay.UNSTARTED,
   gridSize: "beginner",
+  mineData: [] as CellData[][]
 };
 
 export const GameContext = createContext<{
@@ -88,6 +89,11 @@ const reducer = (state: GameState, action: GameActions): GameState => {
         ...state,
         gridSize: action.payload,
       };
+    case GameActionType.GET_MINE_DATA:
+      return {
+        ...state,
+        mineData: action.payload,
+      }
     case GameActionType.RESET_GAME:
       return initReducer(action.payload);
     default:
