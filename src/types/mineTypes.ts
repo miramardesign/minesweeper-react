@@ -6,18 +6,16 @@ export interface CellData {
 }
 
 export interface RowData {
- cells: CellData[];
+  cells: CellData[];
 }
 export interface MineData {
- rows: RowData[];
+  rows: RowData[];
 }
-
 
 interface CellDirectionData {
   iRow: number;
   iCol: number;
 }
-
 export interface PerimeterDirections {
   northWest: CellDirectionData;
   north: CellDirectionData;
@@ -28,7 +26,6 @@ export interface PerimeterDirections {
   south: CellDirectionData;
   southEast: CellDirectionData;
 }
-
 export interface GameTypes {
   beginner: GameConfig;
   intermediate: GameConfig;
@@ -43,9 +40,9 @@ export interface GameConfig {
 
 export type GameTypesKeys = keyof GameTypes;
 
-export enum GameStateDisplay{
-  UNSTARTED = ':)',
-  DANGER = ':()',
-  LOSE = ':(',
-  PLAY = ': )',
-}  
+export enum GameStateDisplay {
+  UNSTARTED = ":)",
+  DANGER = ":()",
+  LOSE = ":(",
+  PLAY = ": )",
+}

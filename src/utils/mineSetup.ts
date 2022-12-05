@@ -187,7 +187,6 @@ const loopAdjCells = (
   iRow: number,
   iCol: number,
   mineData: CellData[][],
-  // cb: any,
   cb: (iRow: number, iCol: number, mineData: CellData[][]) => void
 ) => {
   let perimeter: PerimeterDirections = {
@@ -257,6 +256,8 @@ const isLoseCondition = (
  * @param mineData
  * @returns
  */
+//depping. slow and i needed for num of uncovered cell, but now
+// im keeping an accurate count
 const getMineDataOneDim = (mineData: CellData[][]): CellData[] => {
   let mineDataOneDim: CellData[] = [];
   mineData.map((row, iRow) => {
@@ -268,6 +269,7 @@ const getMineDataOneDim = (mineData: CellData[][]): CellData[] => {
   return mineDataOneDim;
 };
 
+/**depping to keep count as opposed to re-counting. */
 const getUncoveredCells = (mineData: CellData[][]): CellData[][] => {
   mineData.map((row, iRow) => {
     row.map((cell, iCol) => {
@@ -280,8 +282,6 @@ const getUncoveredCells = (mineData: CellData[][]): CellData[][] => {
 const getGameSize = (gridSize: GameTypesKeys): GameConfig => {
   return GameSizes[gridSize];
 };
-
-
 
 export {
   getMineData,

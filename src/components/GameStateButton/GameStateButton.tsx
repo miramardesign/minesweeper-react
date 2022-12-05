@@ -1,7 +1,6 @@
 import React from "react";
 import styles from "./GameStateButton.module.scss";
 
-
 type GameStateButtonProps = {
   gameStateDisplay: string;
   resetGrid: () => void;
@@ -20,7 +19,6 @@ const GameStateButton = ({
 
   return (
     <div id="reset" className={styles["wrap-reset"]}>
-      <i> gamestate button works!~</i>
 
       <button className={"square"} onClick={handleOnClickResetGrid}>
         

@@ -14,6 +14,7 @@ import {
 } from "../../utils/mineSetup";
 import {
   CellData,
+  GameConfig,
   GameStateDisplay,
   GameTypesKeys,
 } from "../../types/mineTypes";
@@ -24,31 +25,24 @@ import GameSizeChooser from "../GameSizeChooser/GameSizeChooser";
 import { GameContext, initialState } from "../../contexts/GameProvider";
 import { GameActionType } from "../../types/state";
 import GameStateButton from "../GameStateButton/GameStateButton";
+import MineDataMap from "../MineDataMap/MineDataMap";
 0
 const MineGrid = () => {
-  // const [isGameStarted, setIsGameStarted] = useState(false);
-  // const [isGameOver, setIsGameOver] = useState(false);
 
  // const [mineData, setMineData] = useState<CellData[][]>([]);
   const { state, dispatch } = useContext(GameContext);
-
+0
   //---use effects
   useEffect(() => {
     const { rows, cols, mines } = getGameSize(state.gridSize);
     let mineDataLocal = getMineData(rows, cols, mines);
     dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
 
-   // setMineData(getMineData(rows, cols, mines));
   }, []);
 
   const handleLeftClick = (iRow: number, iCol: number) => {
-     // dispatch({
-    //   type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
-    //   payload: GameStateDisplay.PLAY,
-    // });
 
     if (state.uncoveredCells === 0) {
-      // setIsGameStarted(true);
       dispatch({ type: GameActionType.SET_START, payload: true });
 
 
@@ -58,7 +52,6 @@ const MineGrid = () => {
 
       dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
 
-      //setMineData(mineDataLocal);
     }
     goTurn(iRow, iCol);
   };
@@ -137,7 +130,7 @@ const MineGrid = () => {
     let ret = placeCellMark(iRow, iCol, mineData);
     // setFlagsPlaced(ret.flagsPlaced);
 
-    setMineData(ret.mineData);
+  //  setMineData(ret.mineData);
   };
 
   /** gridSize dropdown changes, */
@@ -161,16 +154,7 @@ const MineGrid = () => {
 
     let mineDataLocal = getMineData(rows, cols, mines);
     dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
-
-   // setMineData(getMineData(rows, cols, mines));
-
-    // setIsGameStarted(false);
-    // setIsGameOver(false);
-   // dispatch({ type: GameActionType.TOGGLE_END });
-
-
     dispatch({ type: GameActionType.SET_END, payload: false });
-
   };
 
   /**
@@ -199,7 +183,6 @@ const MineGrid = () => {
    * @param mineData
    * @returns
    */
-
   const uncoverCell = (
     iRow: number,
     iCol: number,
@@ -218,23 +201,23 @@ const MineGrid = () => {
 
     mineData[iRow][iCol].uncovered = true;
 
-    //setCellsUncovered(cellsUncovered + 1);
+    const numUncoveredLocal = state.uncoveredCells + 1
     dispatch({
       type: GameActionType.UPDATE_UNCOVER_CELL,
-      payload: state.uncoveredCells + 1,
+      payload: numUncoveredLocal,
     });
 
     mineData[iRow][iCol].markedAs = "uncovered";
 
     uncoverAdjacentZeroSqs(iRow, iCol, mineData);
-    //setMineData(mineData);
    
     dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineData });
 
 
     let numMines = GameSizes[gridSize].mines;
 
-    if (isWinCondition(iRow, iCol, mineData, numMines)) {
+    let gameData = GameSizes[gridSize];
+    if (isWinCondition(iRow, iCol, mineData, gameData, numUncoveredLocal)) {
       onWinCondition();
     }
   };
@@ -249,7 +232,6 @@ const MineGrid = () => {
         mineData[iRow][iCol].uncovered = true;
       });
     });
-   // setMineData(mineData);
     dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineData });
 
   };
@@ -266,20 +248,28 @@ const MineGrid = () => {
     iRow: number,
     iCol: number,
     mineData: CellData[][],
-    numMines: number
+    gameData: GameConfig,
+    uncoveredCells: number,
   ) => {
     //should really use the states uncovered length, but i have to make sure it increments on
     //adjacent 0 cells recursively uncovering cells.
 
-    const allCells: CellData[] = getMineDataOneDim(mineData);
-    const allCellsNoMineLen = allCells.length - numMines;
-    const unconveredLen = allCells.filter((cell) => cell.uncovered).length;
-    console.log(
-      "isWinCondition --- allCellsNoMineLen",
-      allCellsNoMineLen,
-      "uncoveredLen",
-      unconveredLen
-    );
+    //depping getting from data loops.
+   //const allCells: CellData[] = getMineDataOneDim(mineData);
+   // const unconveredLenOLde = allCells.filter((cell) => cell.uncovered).length;
+
+    const allCellsLen = gameData.cols * gameData.rows;
+    const allCellsNoMineLen = allCellsLen - gameData.mines;
+    
+    const unconveredLen = uncoveredCells;
+    // console.log(
+    //   "isWinCondition --- allCellsNoMineLen",
+    //   allCellsNoMineLen,
+    //   "uncoveredLen",
+    //   unconveredLen,
+    //   "uncoveredLenOlde",
+    //   unconveredLenOLde
+    // );
 
     return unconveredLen === allCellsNoMineLen;
   };
@@ -342,7 +332,6 @@ const MineGrid = () => {
         iCol,
         mineData,
         (iRow: number, iCol: number, mineData: CellData[][]) => {
-          // console.log('cb', mineData, iRow, iCol);
 
           let cell = mineData[iRow][iCol];
 
@@ -372,8 +361,8 @@ const MineGrid = () => {
 
   return (
     <section>
-      state.flagsPlaced-------{state.flagsPlaced}
-      state.uncoveredCells-------{state.uncoveredCells}
+      {/* state.flagsPlaced-------{state.flagsPlaced}
+      state.uncoveredCells-------{state.uncoveredCells} */}
       <GameSizeChooser />
       <article id="wrap-row-digital-display-reset">
        
@@ -398,6 +387,12 @@ const MineGrid = () => {
       <br />
       <hr className={styles.break} />
       <article>
+        <MineDataMap mineData={state.mineData}
+           leftClick={handleLeftClick}
+           leftOnMouseDown={handleLeftOnMouseDown}
+           rightClick={handleRightClick}
+        
+        />
         {state.mineData.map((row, iRow) => (
           <div key={iRow}>
             {row.map((col, iCol) => (
