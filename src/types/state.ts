@@ -63,7 +63,6 @@ type DecrementFlagsPlaced = {
   type: GameActionType.DECREMENT_FLAGS_PLACED;
 };
 
-//discrimination unions..
 type ChooseGridSizeAction = {
   type: GameActionType.CHOOSE_SIZE;
   payload: GameTypesKeys;

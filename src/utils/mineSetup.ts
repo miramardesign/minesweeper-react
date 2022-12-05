@@ -1,9 +1,12 @@
+import React from "react";
 import {
   CellData,
   GameConfig,
+  GameStateDisplay,
   GameTypesKeys,
   PerimeterDirections,
 } from "../types/mineTypes";
+import { GameActions, GameActionType, GameState } from "../types/state";
 import { GameSizes } from "./mineSetupData";
 
 const getRandInt = (min: number, max: number) => {
@@ -74,18 +77,19 @@ const placeMines = (
  * put the adjacent mine date in the mine data.
  * @param mineData
  */
-const placeNumAdjMineData = (mineData: CellData[][]) => {
+const placeNumAdjMineData = (
+  mineData: CellData[][],
+  dispatch: React.Dispatch<GameActions>
+) => {
   mineData.map((row, iRow) => {
-    //  console.log('row' + index, row);
     row.map((cell, iCol) => {
       cell.numAdjMines = 0;
       loopAdjCells(
         iRow,
         iCol,
         mineData,
-        (iRow: number, iCol: number, mineData: CellData[][]) => {
-          // console.log('cb', mineData, iRow, iCol);
-
+        dispatch,
+        (iRow: number, iCol: number, mineData: CellData[][], dispatch) => {
           if (existsAndIsMine(iRow, iCol, mineData)) {
             cell.numAdjMines++;
           }
@@ -176,6 +180,8 @@ const isMine = (iRow: number, iCol: number, mineData: CellData[][]) => {
   return mineData[iRow][iCol].hasMine;
 };
 
+//things below access dispatch, change state.
+
 /**
  * run a cb on every adj cell of a given cell by iCol and iRow
  * @param iRow
@@ -187,7 +193,13 @@ const loopAdjCells = (
   iRow: number,
   iCol: number,
   mineData: CellData[][],
-  cb: (iRow: number, iCol: number, mineData: CellData[][]) => void
+  dispatch: React.Dispatch<GameActions>,
+  cb: (
+    iRow: number,
+    iCol: number,
+    mineData: CellData[][],
+    dispatch: React.Dispatch<GameActions>
+  ) => void
 ) => {
   let perimeter: PerimeterDirections = {
     northWest: {
@@ -216,7 +228,8 @@ const loopAdjCells = (
 
   Object.entries(perimeter).forEach(([key, cell], index) => {
     if (existsCell(cell.iRow, cell.iCol, mineData)) {
-      cb(cell.iRow, cell.iCol, mineData);
+      console.log("c------------------b is ?", JSON.stringify(cb));
+      cb(cell.iRow, cell.iCol, mineData, dispatch);
     }
   });
 };
@@ -228,7 +241,7 @@ const loopAdjCells = (
  * @param numMines
  * @returns
  */
-const getMineData = (numRows: number, numCols: number, numMines: number) => {
+const getGridDataStructure = (numRows: number, numCols: number, numMines: number) => {
   let mineData = new Array(numRows).fill([]).map(() => {
     return new Array(numCols).fill({}).map((element: CellData) => {
       return {
@@ -243,6 +256,30 @@ const getMineData = (numRows: number, numCols: number, numMines: number) => {
   return mineData;
 };
 
+/**
+ * places mines and adjacent mine data and pushes into storage, for a given game size
+ * @param iRow 
+ * @param iCol 
+ * @param state 
+ * @param dispatch 
+ */
+const getMineData = (iRow: number, iCol: number, state: GameState, dispatch: React.Dispatch<GameActions>) => {
+  const { rows, cols, mines } = getGameSize(state.gridSize);
+  let mineDataLocal = placeMines(
+    state.mineData,
+    rows,
+    cols,
+    mines,
+    iRow,
+    iCol
+  );
+  mineDataLocal = placeNumAdjMineData(mineDataLocal, dispatch);
+
+  dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
+}
+
+
+
 const isLoseCondition = (
   iRow: number,
   iCol: number,
@@ -251,48 +288,302 @@ const isLoseCondition = (
   return isMine(iRow, iCol, mineData);
 };
 
-/**
- * one dimensional array of cell data, instead of being split into rows/cols its just an array.
- * @param mineData
- * @returns
- */
-//depping. slow and i needed for num of uncovered cell, but now
-// im keeping an accurate count
-const getMineDataOneDim = (mineData: CellData[][]): CellData[] => {
-  let mineDataOneDim: CellData[] = [];
-  mineData.map((row, iRow) => {
-    row.map((cell, iCol) => {
-      mineDataOneDim.push(cell);
-    });
-  });
-
-  return mineDataOneDim;
-};
-
-/**depping to keep count as opposed to re-counting. */
-const getUncoveredCells = (mineData: CellData[][]): CellData[][] => {
-  mineData.map((row, iRow) => {
-    row.map((cell, iCol) => {
-      mineData[iRow][iCol].uncovered = true;
-    });
-  });
-  return mineData;
-};
-
 const getGameSize = (gridSize: GameTypesKeys): GameConfig => {
   return GameSizes[gridSize];
 };
 
+/**
+ *
+ * loops thru neighbors recursively checking and revealing.
+ * @param iRow
+ * @param iCol
+ * @param mineData
+ * @param dispatch
+ * @returns
+ */
+const uncoverAdjacentZeroSqs = (
+  iRow: number,
+  iCol: number,
+  mineData: CellData[][],
+  dispatch: React.Dispatch<GameActions>
+) => {
+  if (mineData[iRow][iCol].numAdjMines === 0) {
+    loopAdjCells(
+      iRow,
+      iCol,
+      mineData,
+      dispatch,
+      (
+        iRow: number,
+        iCol: number,
+        mineData: CellData[][],
+        dispatch: React.Dispatch<GameActions>
+      ) => {
+        let cell = mineData[iRow][iCol];
+
+        //why 4? i forget. todo rename...
+        const minSiblingMines = 4;
+
+        if (cell.numAdjMines < minSiblingMines) {
+          //dont hit already hit mines...
+          if (!cell.uncovered) {
+            //IMPORTANT increment state.uncovered cells~~~
+            cell.uncovered = true;
+
+            dispatch({
+              type: GameActionType.INCREMENT_UNCOVER_CELL,
+            });
+
+            //call neighborcells recursion!!---
+            uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
+          }
+        }
+      }
+    );
+  }
+
+  return mineData;
+};
+
+/**
+ * what happens when we win? we go to disneyland...
+ */
+const onWinCondition = (mineData: CellData[][], dispatch: React.Dispatch<GameActions>) => {
+  console.log("onWinCondition");
+
+  uncoverAllCells(mineData, dispatch);
+
+  dispatch({ type: GameActionType.SET_END, payload: true });
+
+  dispatch({
+    type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
+    payload: GameStateDisplay.PLAY,
+  });
+
+  window.setTimeout(() => {
+    window.alert("epic Win!!!1111");
+  }, 500);
+};
+
+const onLoseCondition = (
+  iRow: number,
+  iCol: number,
+  mineData: CellData[][],
+  dispatch: React.Dispatch<GameActions>
+) => {
+  console.log("onLoseCondition");
+
+  dispatch({ type: GameActionType.TOGGLE_LOST });
+  dispatch({ type: GameActionType.SET_END, payload: true });
+
+  //if the game is over not because of click but
+  //because of timeout im sending -1 and cell wont exist
+  if (existsCell(iRow, iCol, mineData)) {
+    mineData[iRow][iCol].markedAs = "exploded";
+  }
+  uncoverAllCells(mineData, dispatch);
+  window.setTimeout(() => {
+    window.alert("boom!");
+  }, 500);
+};
+
+/**
+ * may have to reset counters here.
+ * @param gridSize
+ */
+const resetGrid = (
+  gridSize: GameTypesKeys,
+  dispatch: React.Dispatch<GameActions>,
+  initialState: GameState
+) => {
+  dispatch({
+    type: GameActionType.RESET_GAME,
+    payload: initialState,
+  });
+
+  const { rows, cols, mines } = getGameSize(gridSize);
+
+  let mineDataLocal = getGridDataStructure(rows, cols, mines);
+  dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
+  dispatch({ type: GameActionType.SET_END, payload: false });
+};
+
+
+  /**
+   * show whole board for win-lose
+   * @param mineData
+   */
+   const uncoverAllCells = (mineData: CellData[][], dispatch: React.Dispatch<GameActions>): void => {
+    mineData.map((row, iRow) => {
+      row.map((cell, iCol) => {
+        mineData[iRow][iCol].uncovered = true;
+      });
+    });
+    dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineData });
+  };
+
+    /**
+   * uncover the cell and decide what happens next. win, lose or continue...
+   * @param iRow
+   * @param iCol
+   * @param mineData
+   * @returns
+   */
+     const uncoverCell = (
+      iRow: number,
+      iCol: number,
+      mineData: CellData[][],
+      gridSize: GameTypesKeys,
+      uncoveredCells: number,
+      dispatch: React.Dispatch<GameActions>,
+    ) => {
+      if (isLoseCondition(iRow, iCol, mineData)) {
+        onLoseCondition(iRow, iCol, mineData, dispatch);
+        return;
+      }
+  
+      //if already uncovered
+      if (mineData[iRow][iCol].uncovered) {
+        return;
+      }
+  
+      mineData[iRow][iCol].uncovered = true;  
+      const numUncoveredLocal = uncoveredCells + 1;
+      dispatch({
+        type: GameActionType.UPDATE_UNCOVER_CELL,
+        payload: numUncoveredLocal,
+      });
+  
+      mineData[iRow][iCol].markedAs = "uncovered";
+  
+      uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
+  
+      dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineData });
+  
+      let numMines = GameSizes[gridSize].mines;
+  
+      let gameData = GameSizes[gridSize];
+      if (isWinCondition( gameData, numUncoveredLocal)) {
+        onWinCondition(mineData, dispatch);
+      }
+    };
+
+      /**
+   *  determines if user has won, counts uncovered cells
+   * @param gameData 
+   * @param uncoveredCellsLen 
+   * @returns 
+   */
+  const isWinCondition = (
+
+    gameData: GameConfig,
+    uncoveredCellsLen: number
+  ) => {
+    const allCellsLen = gameData.cols * gameData.rows;
+    const allCellsNoMineLen = allCellsLen - gameData.mines;
+ 
+    return uncoveredCellsLen === allCellsNoMineLen;
+  };
+
+  /**
+   * then the turn happens.
+   * @param iRow 
+   * @param iCol 
+   * @param state 
+   * @param dispatch 
+   * @returns 
+   */
+  const goTurn = (
+    iRow: number,
+    iCol: number,
+    state: GameState,
+    dispatch: React.Dispatch<GameActions>
+  ) => {
+    //already lost.
+    if (state.isLost) {
+      return;
+    }
+
+    console.log("clicked row ", iRow, "col", iCol);
+
+    uncoverCell(
+      iRow,
+      iCol,
+      state.mineData,
+      state.gridSize,
+      state.uncoveredCells,
+      dispatch
+    );
+  };
+
+    /**
+   * just marks as bomb on 1st right click, as question on 2nd and clears on third,
+   * @param iRow 
+   * @param iCol 
+   * @param mineData 
+   * @param dispatch 
+   * @returns 
+   */
+     const setCellMark = (
+      iRow: number,
+      iCol: number,
+      mineData: CellData[][],
+      dispatch: React.Dispatch<GameActions>
+    ): void => {
+      console.log("right click olde?????????????", iRow, iCol);
+  
+      const cell = mineData[iRow][iCol];
+  
+      if (cell.uncovered) {
+        return;
+      }
+  
+      switch (cell.markedAs) {
+        case "": {
+          cell.markedAs = "flag";
+  
+          dispatch({
+            type: GameActionType.INCREMENT_FLAGS_PLACED,
+          });
+          //its really a flag, the mines are only shown on lose.
+  
+          break;
+        }
+        case "flag": {
+          dispatch({
+            type: GameActionType.DECREMENT_FLAGS_PLACED,
+          });
+          cell.markedAs = "question";
+          break;
+        }
+        case "question": {
+          cell.markedAs = "";
+          break;
+        }
+        default: {
+          console.log("Empty action received.");
+        }
+      }
+    };
+  
+
 export {
-  getMineData,
-  getMineDataOneDim,
+  getGridDataStructure,
+  getMineData,  
   isMine,
   isLoseCondition,
-  getUncoveredCells,
   placeMines,
   placeNumAdjMineData,
   placeCellMark,
   existsCell,
   getGameSize,
   loopAdjCells,
+  uncoverAdjacentZeroSqs,
+  onWinCondition,
+  onLoseCondition,
+  resetGrid,
+  uncoverAllCells,
+  uncoverCell,
+  goTurn,
+  setCellMark,
 };
