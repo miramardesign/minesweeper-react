@@ -10,7 +10,12 @@ type DigitalDisplayProps = {
   gameOver: boolean;
 };
 
-const DigitalDisplayCountup = ({ id, timeoutCount, startCount, gameOver }: DigitalDisplayProps) => {
+const DigitalDisplayCountup = ({
+  id,
+  timeoutCount,
+  startCount,
+  gameOver,
+}: DigitalDisplayProps) => {
   let start = new Date().getTime();
 
   const interval = 1000;
@@ -32,34 +37,31 @@ const DigitalDisplayCountup = ({ id, timeoutCount, startCount, gameOver }: Digit
     requestRef.current = requestAnimationFrame(animate);
   };
 
-//start when told
+  //start when told
   useEffect(() => {
-    if(startCount){
+    if (startCount) {
       requestRef.current = requestAnimationFrame(animate);
-
-    }else{
-      setCountUp(0)
+    } else {
+      setCountUp(0);
     }
     return () => cancelAnimationFrame(requestRef.current);
- }, [startCount]);
-
+  }, [startCount]);
 
   //kill anim on timeout max
   useEffect(() => {
-     if (countUp >= maxCount ) {
+    if (countUp >= maxCount) {
       console.log("stop count!!!!!!!!!!!!!!!!", countUp);
       cancelAnimationFrame(requestRef.current);
       timeoutCount("msg countup was" + countUp);
     }
-    if(gameOver){
+    if (gameOver) {
       cancelAnimationFrame(requestRef.current);
     }
   }, [countUp]);
 
-
   return (
     <div>
-      <DigitalDisplay id={"time-counter"} displayNum={countUp}></DigitalDisplay>
+      <DigitalDisplay id={"time-counter"} displayNum={countUp} />
     </div>
   );
 };

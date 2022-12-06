@@ -10,6 +10,7 @@ import {
   setCellMark,
 } from "../../utils/mineSetup";
 import {
+  CellData,
   GameStateDisplay,
 } from "../../types/mineTypes";
 import { GameSizes } from "../../utils/mineSetupData";
@@ -17,7 +18,7 @@ import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
 import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountup";
 import GameSizeChooser from "../GameSizeChooser/GameSizeChooser";
 import { GameContext, initialState } from "../../contexts/GameProvider";
-import { GameActions, GameActionType, GameState } from "../../types/state";
+import {  GameActionType } from "../../types/state";
 import GameStateButton from "../GameStateButton/GameStateButton";
 import MineDataMap from "../MineDataMap/MineDataMap";
 
@@ -27,19 +28,28 @@ const MineGrid = () => {
   //component load setup.
   useEffect(() => {
     const { rows, cols, mines } = getGameSize(state.gridSize);
-    let mineDataLocal = getGridDataStructure(rows, cols, mines);
-    dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
+    let mineData: CellData[][] = getGridDataStructure(rows, cols, mines);
+    dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
   }, []);
 
+  /**
+   * clicked and run the turn.
+   * @param iRow 
+   * @param iCol 
+   */
   const handleLeftClick = (iRow: number, iCol: number) => {
     if (state.uncoveredCells === 0) {
       dispatch({ type: GameActionType.SET_START, payload: true }); 
-      getMineData(iRow, iCol, state, dispatch);
-     
+      getMineData(iRow, iCol, state, dispatch);     
     }
     goTurn(iRow, iCol, state, dispatch);
   };
 
+  /**
+   * just changes display :) :() :( Gamestatedisplay.
+   * @param iRow 
+   * @param iCol 
+   */
   const handleLeftOnMouseDown = (iRow: number, iCol: number) => {
     dispatch({
       type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
@@ -47,29 +57,37 @@ const MineGrid = () => {
     });
   };
 
+  /**
+   * set a marker on right click.
+   * @param iRow 
+   * @param iCol 
+   */
   const handleRightClick = (iRow: number, iCol: number) => {
     //has a small bug on 3rd clic..
     setCellMark(iRow, iCol, state.mineData, dispatch);
   };
 
-  /**when the timer countup says we are out of time.  */
+  /**
+   * when the timer countup says we are out of time.
+   * @param msg 
+   */
   const handleTimeout = (msg: string) => {
     console.log(msg);
      onLoseCondition(-1, -1, state.mineData, dispatch);
   };
 
-  /** gridSize dropdown changes, */
-  useEffect(() => {
-    console.log("gridsized changed.............", state.gridSize);
-    resetGrid(state.gridSize, dispatch, initialState);
-  }, [state.gridSize]);
+    /** gridSize dropdown changes, */
+    useEffect(() => {
+      console.log("gridsized changed.........to....", state.gridSize);
+      resetGrid(state.gridSize, dispatch, initialState, 'useeffect 82');
+    }, [state.gridSize]);
 
   /**
    * smiley face / frowny face clicked.
    * @param e event of clicked element.
    */
   const handleOnClickResetGrid = () => {
-    resetGrid(state.gridSize, dispatch, initialState);
+    resetGrid(state.gridSize, dispatch, initialState, 'handleOnClickResetGrid');
   };
 
   return (
@@ -84,14 +102,14 @@ const MineGrid = () => {
         <GameStateButton
           gameStateDisplay={state.gameStateDisplay}
           resetGrid={handleOnClickResetGrid}
-        ></GameStateButton>
+        />
 
         <DigitalDisplayCountup
           id={"time-counter"}
           timeoutCount={handleTimeout}
           startCount={state.isGameStarted}
           gameOver={state.isGameOver}
-        ></DigitalDisplayCountup>
+        />
       </article>
       <br />
       <hr className={styles.break} />

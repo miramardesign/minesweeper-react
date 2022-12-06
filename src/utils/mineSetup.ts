@@ -5,6 +5,7 @@ import {
   GameStateDisplay,
   GameTypesKeys,
   PerimeterDirections,
+  PerimeterDirectionsKeys,
 } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
 import { GameSizes } from "./mineSetupData";
@@ -226,12 +227,19 @@ const loopAdjCells = (
     southEast: { iRow: iRow + 1, iCol: iCol + 1 },
   };
 
-  Object.entries(perimeter).forEach(([key, cell], index) => {
+  for (let direction in perimeter) {
+    let cell = perimeter[direction as PerimeterDirectionsKeys];
     if (existsCell(cell.iRow, cell.iCol, mineData)) {
-      console.log("c------------------b is ?", JSON.stringify(cb));
+      // console.log(cell, "cellllllll");
       cb(cell.iRow, cell.iCol, mineData, dispatch);
-    }
-  });
+    }   
+  }
+
+  // Object.entries(perimeter).forEach(([key, cell], index) => {
+  //   if (existsCell(cell.iRow, cell.iCol, mineData)) {
+  //     cb(cell.iRow, cell.iCol, mineData, dispatch);
+  //   }
+  // });
 };
 
 /**
@@ -241,7 +249,11 @@ const loopAdjCells = (
  * @param numMines
  * @returns
  */
-const getGridDataStructure = (numRows: number, numCols: number, numMines: number) => {
+const getGridDataStructure = (
+  numRows: number,
+  numCols: number,
+  numMines: number
+) => {
   let mineData = new Array(numRows).fill([]).map(() => {
     return new Array(numCols).fill({}).map((element: CellData) => {
       return {
@@ -257,29 +269,33 @@ const getGridDataStructure = (numRows: number, numCols: number, numMines: number
 };
 
 /**
- * places mines and adjacent mine data and pushes into storage, for a given game size
- * @param iRow 
- * @param iCol 
- * @param state 
- * @param dispatch 
+ * places mines and adjacent mine data and pushes into storage,
+ * for a given game size
+ * @param iRow
+ * @param iCol
+ * @param state
+ * @param dispatch
  */
-const getMineData = (iRow: number, iCol: number, state: GameState, dispatch: React.Dispatch<GameActions>) => {
+const getMineData = (
+  iRow: number,
+  iCol: number,
+  state: GameState,
+  dispatch: React.Dispatch<GameActions>
+) => {
   const { rows, cols, mines } = getGameSize(state.gridSize);
-  let mineDataLocal = placeMines(
-    state.mineData,
-    rows,
-    cols,
-    mines,
-    iRow,
-    iCol
-  );
+  let mineDataLocal = placeMines(state.mineData, rows, cols, mines, iRow, iCol);
   mineDataLocal = placeNumAdjMineData(mineDataLocal, dispatch);
 
-  dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
-}
+  dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineDataLocal });
+};
 
-
-
+/**
+ * determine if they hit a mine and thus lost
+ * @param iRow
+ * @param iCol
+ * @param mineData
+ * @returns
+ */
 const isLoseCondition = (
   iRow: number,
   iCol: number,
@@ -288,6 +304,12 @@ const isLoseCondition = (
   return isMine(iRow, iCol, mineData);
 };
 
+/**
+ * return the gamedata obj that has numRows, numCols and num mines for a given gridSize
+ * from the dropdown.
+ * @param gridSize
+ * @returns
+ */
 const getGameSize = (gridSize: GameTypesKeys): GameConfig => {
   return GameSizes[gridSize];
 };
@@ -348,7 +370,10 @@ const uncoverAdjacentZeroSqs = (
 /**
  * what happens when we win? we go to disneyland...
  */
-const onWinCondition = (mineData: CellData[][], dispatch: React.Dispatch<GameActions>) => {
+const onWinCondition = (
+  mineData: CellData[][],
+  dispatch: React.Dispatch<GameActions>
+) => {
   console.log("onWinCondition");
 
   uncoverAllCells(mineData, dispatch);
@@ -394,182 +419,181 @@ const onLoseCondition = (
 const resetGrid = (
   gridSize: GameTypesKeys,
   dispatch: React.Dispatch<GameActions>,
-  initialState: GameState
+  initialState: GameState,
+  caller: string
 ) => {
   dispatch({
     type: GameActionType.RESET_GAME,
     payload: initialState,
   });
+  console.log("reset grid called size", gridSize, "caller:", caller);
 
   const { rows, cols, mines } = getGameSize(gridSize);
 
   let mineDataLocal = getGridDataStructure(rows, cols, mines);
-  dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineDataLocal });
+  dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineDataLocal });
   dispatch({ type: GameActionType.SET_END, payload: false });
 };
 
-
-  /**
-   * show whole board for win-lose
-   * @param mineData
-   */
-   const uncoverAllCells = (mineData: CellData[][], dispatch: React.Dispatch<GameActions>): void => {
-    mineData.map((row, iRow) => {
-      row.map((cell, iCol) => {
-        mineData[iRow][iCol].uncovered = true;
-      });
+/**
+ * show whole board for win-lose
+ * @param mineData
+ */
+const uncoverAllCells = (
+  mineData: CellData[][],
+  dispatch: React.Dispatch<GameActions>
+): void => {
+  mineData.map((row, iRow) => {
+    row.map((cell, iCol) => {
+      mineData[iRow][iCol].uncovered = true;
     });
-    dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineData });
-  };
+  });
+  dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
+};
 
-    /**
-   * uncover the cell and decide what happens next. win, lose or continue...
-   * @param iRow
-   * @param iCol
-   * @param mineData
-   * @returns
-   */
-     const uncoverCell = (
-      iRow: number,
-      iCol: number,
-      mineData: CellData[][],
-      gridSize: GameTypesKeys,
-      uncoveredCells: number,
-      dispatch: React.Dispatch<GameActions>,
-    ) => {
-      if (isLoseCondition(iRow, iCol, mineData)) {
-        onLoseCondition(iRow, iCol, mineData, dispatch);
-        return;
-      }
-  
-      //if already uncovered
-      if (mineData[iRow][iCol].uncovered) {
-        return;
-      }
-  
-      mineData[iRow][iCol].uncovered = true;  
-      const numUncoveredLocal = uncoveredCells + 1;
+/**
+ * uncover the cell and decide what happens next. win, lose or continue...
+ * @param iRow
+ * @param iCol
+ * @param mineData
+ * @returns
+ */
+const uncoverCell = (
+  iRow: number,
+  iCol: number,
+  mineData: CellData[][],
+  gridSize: GameTypesKeys,
+  uncoveredCells: number,
+  dispatch: React.Dispatch<GameActions>
+) => {
+  if (isLoseCondition(iRow, iCol, mineData)) {
+    onLoseCondition(iRow, iCol, mineData, dispatch);
+    return;
+  }
+
+  //if already uncovered
+  if (mineData[iRow][iCol].uncovered) {
+    return;
+  }
+
+  mineData[iRow][iCol].uncovered = true;
+  const numUncoveredLocal = uncoveredCells + 1;
+  dispatch({
+    type: GameActionType.UPDATE_UNCOVER_CELL,
+    payload: numUncoveredLocal,
+  });
+
+  mineData[iRow][iCol].markedAs = "uncovered";
+
+  uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
+
+  dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
+
+  let numMines = GameSizes[gridSize].mines;
+
+  let gameData = GameSizes[gridSize];
+  if (isWinCondition(gameData, numUncoveredLocal)) {
+    onWinCondition(mineData, dispatch);
+  }
+};
+
+/**
+ *  determines if user has won, counts uncovered cells
+ * @param gameData
+ * @param uncoveredCellsLen
+ * @returns
+ */
+const isWinCondition = (gameData: GameConfig, uncoveredCellsLen: number) => {
+  const allCellsLen = gameData.cols * gameData.rows;
+  const allCellsNoMineLen = allCellsLen - gameData.mines;
+
+  return uncoveredCellsLen === allCellsNoMineLen;
+};
+
+/**
+ * then the turn happens.
+ * @param iRow
+ * @param iCol
+ * @param state
+ * @param dispatch
+ * @returns
+ */
+const goTurn = (
+  iRow: number,
+  iCol: number,
+  state: GameState,
+  dispatch: React.Dispatch<GameActions>
+) => {
+  //already lost.
+  if (state.isLost) {
+    return;
+  }
+
+  console.log("clicked row ", iRow, "col", iCol);
+
+  uncoverCell(
+    iRow,
+    iCol,
+    state.mineData,
+    state.gridSize,
+    state.uncoveredCells,
+    dispatch
+  );
+};
+
+/**
+ * just marks as bomb on 1st right click, as question on 2nd and clears on third,
+ * @param iRow
+ * @param iCol
+ * @param mineData
+ * @param dispatch
+ * @returns
+ */
+const setCellMark = (
+  iRow: number,
+  iCol: number,
+  mineData: CellData[][],
+  dispatch: React.Dispatch<GameActions>
+): void => {
+  console.log("right click olde?????????????", iRow, iCol);
+
+  const cell = mineData[iRow][iCol];
+
+  if (cell.uncovered) {
+    return;
+  }
+
+  switch (cell.markedAs) {
+    case "": {
+      cell.markedAs = "flag";
+
       dispatch({
-        type: GameActionType.UPDATE_UNCOVER_CELL,
-        payload: numUncoveredLocal,
+        type: GameActionType.INCREMENT_FLAGS_PLACED,
       });
-  
-      mineData[iRow][iCol].markedAs = "uncovered";
-  
-      uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
-  
-      dispatch({ type: GameActionType.GET_MINE_DATA, payload: mineData });
-  
-      let numMines = GameSizes[gridSize].mines;
-  
-      let gameData = GameSizes[gridSize];
-      if (isWinCondition( gameData, numUncoveredLocal)) {
-        onWinCondition(mineData, dispatch);
-      }
-    };
+      //its really a flag, the mines are only shown on lose.
 
-      /**
-   *  determines if user has won, counts uncovered cells
-   * @param gameData 
-   * @param uncoveredCellsLen 
-   * @returns 
-   */
-  const isWinCondition = (
-
-    gameData: GameConfig,
-    uncoveredCellsLen: number
-  ) => {
-    const allCellsLen = gameData.cols * gameData.rows;
-    const allCellsNoMineLen = allCellsLen - gameData.mines;
- 
-    return uncoveredCellsLen === allCellsNoMineLen;
-  };
-
-  /**
-   * then the turn happens.
-   * @param iRow 
-   * @param iCol 
-   * @param state 
-   * @param dispatch 
-   * @returns 
-   */
-  const goTurn = (
-    iRow: number,
-    iCol: number,
-    state: GameState,
-    dispatch: React.Dispatch<GameActions>
-  ) => {
-    //already lost.
-    if (state.isLost) {
-      return;
+      break;
     }
-
-    console.log("clicked row ", iRow, "col", iCol);
-
-    uncoverCell(
-      iRow,
-      iCol,
-      state.mineData,
-      state.gridSize,
-      state.uncoveredCells,
-      dispatch
-    );
-  };
-
-    /**
-   * just marks as bomb on 1st right click, as question on 2nd and clears on third,
-   * @param iRow 
-   * @param iCol 
-   * @param mineData 
-   * @param dispatch 
-   * @returns 
-   */
-     const setCellMark = (
-      iRow: number,
-      iCol: number,
-      mineData: CellData[][],
-      dispatch: React.Dispatch<GameActions>
-    ): void => {
-      console.log("right click olde?????????????", iRow, iCol);
-  
-      const cell = mineData[iRow][iCol];
-  
-      if (cell.uncovered) {
-        return;
-      }
-  
-      switch (cell.markedAs) {
-        case "": {
-          cell.markedAs = "flag";
-  
-          dispatch({
-            type: GameActionType.INCREMENT_FLAGS_PLACED,
-          });
-          //its really a flag, the mines are only shown on lose.
-  
-          break;
-        }
-        case "flag": {
-          dispatch({
-            type: GameActionType.DECREMENT_FLAGS_PLACED,
-          });
-          cell.markedAs = "question";
-          break;
-        }
-        case "question": {
-          cell.markedAs = "";
-          break;
-        }
-        default: {
-          console.log("Empty action received.");
-        }
-      }
-    };
-  
+    case "flag": {
+      dispatch({
+        type: GameActionType.DECREMENT_FLAGS_PLACED,
+      });
+      cell.markedAs = "question";
+      break;
+    }
+    case "question": {
+      cell.markedAs = "";
+      break;
+    }
+    default: {
+      console.log("Empty action received.");
+    }
+  }
+};
 
 export {
   getGridDataStructure,
-  getMineData,  
+  getMineData,
   isMine,
   isLoseCondition,
   placeMines,

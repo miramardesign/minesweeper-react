@@ -26,6 +26,8 @@ export interface PerimeterDirections {
   south: CellDirectionData;
   southEast: CellDirectionData;
 }
+
+export type PerimeterDirectionsKeys = keyof PerimeterDirections;
 export interface GameTypes {
   beginner: GameConfig;
   intermediate: GameConfig;

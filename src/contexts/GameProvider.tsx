@@ -89,7 +89,7 @@ const reducer = (state: GameState, action: GameActions): GameState => {
         ...state,
         gridSize: action.payload,
       };
-    case GameActionType.GET_MINE_DATA:
+    case GameActionType.SET_MINE_DATA:
       return {
         ...state,
         mineData: action.payload,

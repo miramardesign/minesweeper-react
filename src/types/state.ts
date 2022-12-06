@@ -22,7 +22,7 @@ export enum GameActionType {
   DECREMENT_FLAGS_PLACED = "DECREMENT_FLAGS_PLACED",
   CHOOSE_SIZE = "CHOOSE_SIZE",
   RESET_GAME = "RESET_GAME",
-  GET_MINE_DATA = "GET_MINE_DATA",
+  SET_MINE_DATA = "SET_MINE_DATA",
 }
 
 type ToggleLostAction = {
@@ -74,7 +74,7 @@ type ResetGameAction = {
 };
 
 type GetMineDataAction = {
-  type: GameActionType.GET_MINE_DATA;
+  type: GameActionType.SET_MINE_DATA;
   payload: CellData[][];
 };
 
