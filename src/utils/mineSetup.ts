@@ -8,12 +8,19 @@ import {
   PerimeterDirectionsKeys,
 } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
-import { GameSizes } from "./mineSetupData";
+import { GameSizes, perimeterCellsOffsets } from "./mineSetupData";
 
 const getRandInt = (min: number, max: number) => {
   return Math.floor(Math.random() * max);
 };
 
+/**
+ * depping since im checking cell boounds now.
+ * @param iRow 
+ * @param iCol 
+ * @param mineData 
+ * @returns 
+ */
 const existsCell = (iRow: number, iCol: number, mineData: CellData[][]) => {
   // console.log('existscelllllllllllllll', iRow);
   //row doesnt exist
@@ -202,14 +209,37 @@ const loopAdjCells = (
     dispatch: React.Dispatch<GameActions>
   ) => void
 ) => {
-  const perimeterCells: PerimeterDirections = getPerimeterCells(iRow, iCol);
 
-  for (let direction in perimeterCells) {
-    let cell = perimeterCells[direction as PerimeterDirectionsKeys];
-    if (existsCell(cell.iRow, cell.iCol, mineData)) {
-      cb(cell.iRow, cell.iCol, mineData, dispatch);
-    }
-  }
+  //TODO: pass in from gamestate.
+  const numRows = mineData.length;
+  const numCols = mineData[0].length ;
+
+  const perimeterCells: PerimeterDirections = getPerimeterCells(iRow, iCol, numRows,numCols);
+
+  //depped because i had too much data, e.g. prefiiltered out of bounds cells.
+  // for (let direction in perimeterCells) {
+  //   let cell = perimeterCells[direction as PerimeterDirectionsKeys];
+  //   if (existsCell(cell.iRow, cell.iCol, mineData)) {
+  //     cb(cell.iRow, cell.iCol, mineData, dispatch);
+  //   }
+  // }
+
+  Object.entries(perimeterCells).forEach(([key, cell], index) => {
+    cb(cell.iRow, cell.iCol, mineData, dispatch);    
+  });
+
+};
+
+const bothInBounds = (
+  iRow: number,
+  iCol: number,
+  numRows: number,
+  numCols: number
+): boolean => {
+  const rowInBounds = iRow > -1 && iRow < numRows ;
+  const colInBounds = iCol > -1 && iCol < numCols ;
+
+  return rowInBounds && colInBounds;
 };
 
 /**
@@ -218,15 +248,42 @@ const loopAdjCells = (
  * @param iRow
  * @param iCol
  */
-const getPerimeterCells = (iRow: number, iCol: number) => {
+const getPerimeterCells = (iRow: number, iCol: number, numRows: number, numCols: number) => {
   //todo exclude out of bounds cells, so i dont have to loop thru them
   //and call exists.
-  let iRowMinus1 = iRow - 1;
-  let iRowPlus1 = iRow + 1;
 
-  let iColMinus1 = iCol - 1;
-  let iConPlus1 = iCol + 1;
+  const perimeterCellsDynamic: PerimeterDirections = {};
 
+
+  for (let direction in perimeterCellsOffsets) {
+    let cellOffset = perimeterCellsOffsets[direction as PerimeterDirectionsKeys];
+     
+    let offSetIrow = cellOffset.iRow + iRow;
+    let offSetIcol = cellOffset.iCol + iCol;
+    if (bothInBounds(offSetIrow, offSetIcol, numRows, numCols)) {
+      perimeterCellsDynamic[direction as PerimeterDirectionsKeys] = {
+        iRow: offSetIrow,
+        iCol: offSetIcol,
+      };
+    } 
+  }
+
+  console.log('perimeter cells of ', [iRow, iCol], perimeterCellsDynamic, '---');
+
+  // const iRowMinus1 = iRow - 1;
+  // const iRowPlus1 = iRow + 1;
+
+  // const iColMinus1 = iCol - 1;
+  // const iConPlus1 = iCol + 1;
+ 
+  // if (bothInBounds(iRowMinus1, iRowPlus1, numRows, numCols)) {
+  //   perimeterCellsNew.northWest = {
+  //     iRow: iRowMinus1,
+  //     iCol: iColMinus1,
+  //   };
+  // } 
+
+  //depping
   const perimeterCells: PerimeterDirections = {
     northWest: {
       iRow: iRow - 1,
@@ -252,7 +309,7 @@ const getPerimeterCells = (iRow: number, iCol: number) => {
     southEast: { iRow: iRow + 1, iCol: iCol + 1 },
   };
 
-  return perimeterCells;
+  return perimeterCellsDynamic;
 };
 
 /**
@@ -327,6 +384,38 @@ const getGameSize = (gridSize: GameTypesKeys): GameConfig => {
   return GameSizes[gridSize];
 };
 
+const uncoverAdjacentZeroSqsRecursiveCallback = (
+  iRow: number,
+  iCol: number,
+  mineData: CellData[][],
+  dispatch: React.Dispatch<GameActions>
+) => {
+
+  if(!existsCell(iRow, iCol, mineData)){
+    console.error('cell at ', iRow, iCol, 'does not exist');
+  }
+
+  let cell = mineData[iRow][iCol];
+
+  //why 4? i forget. todo rename...
+  const minSiblingMines = 4;
+
+  if (cell.numAdjMines < minSiblingMines) {
+    //dont hit already hit mines...
+    if (!cell.uncovered) {
+      //IMPORTANT increment state.uncovered cells~~~
+      cell.uncovered = true;
+
+      dispatch({
+        type: GameActionType.INCREMENT_UNCOVER_CELL,
+      });
+
+      //call neighborcells recursion!!---
+      uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
+    }
+  }
+};
+
 /**
  *
  * loops thru neighbors recursively checking and revealing.
@@ -342,39 +431,16 @@ const uncoverAdjacentZeroSqs = (
   mineData: CellData[][],
   dispatch: React.Dispatch<GameActions>
 ) => {
-
-  const recallSelfCB = (
-    iRow: number,
-    iCol: number,
-    mineData: CellData[][],
-    dispatch: React.Dispatch<GameActions>
-  ) => {
-    let cell = mineData[iRow][iCol];
-
-    //why 4? i forget. todo rename...
-    const minSiblingMines = 4;
-
-    if (cell.numAdjMines < minSiblingMines) {
-      //dont hit already hit mines...
-      if (!cell.uncovered) {
-        //IMPORTANT increment state.uncovered cells~~~
-        cell.uncovered = true;
-
-        dispatch({
-          type: GameActionType.INCREMENT_UNCOVER_CELL,
-        });
-
-        //call neighborcells recursion!!---
-        uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
-      }
-    }
-  };
-
   if (mineData[iRow][iCol].numAdjMines === 0) {
-    //const perimeterCells: PerimeterDirections = getPerimeterCells(iRow, iCol);
-    loopAdjCells(iRow, iCol, mineData, dispatch, recallSelfCB);
+    // const perimeterCells: PerimeterDirections = getPerimeterCells(iRow, iCol, 4, 8);
+    loopAdjCells(
+      iRow,
+      iCol,
+      mineData,
+      dispatch,
+      uncoverAdjacentZeroSqsRecursiveCallback
+    );
   }
-
   return mineData;
 };
 
@@ -429,7 +495,7 @@ const onLoseCondition = (
  */
 const resetGrid = (
   dispatch: React.Dispatch<GameActions>,
-  initialState: GameState,
+  initialState: GameState
 ) => {
   dispatch({
     type: GameActionType.RESET_GAME,

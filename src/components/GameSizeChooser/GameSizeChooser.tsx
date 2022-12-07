@@ -6,11 +6,13 @@ import { GameSizes } from "../../utils/mineSetupData";
 import styles from "./GameSizeChooser.module.scss";
 
 const GameSizeChooser = () => {
-
-  const {  dispatch } = useContext(GameContext);
+  const { dispatch } = useContext(GameContext);
 
   const handleGameSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatch( {type: GameActionType.CHOOSE_SIZE, payload: e.target.value as GameTypesKeys})
+    dispatch({
+      type: GameActionType.CHOOSE_SIZE,
+      payload: e.target.value as GameTypesKeys,
+    });
   };
 
   return (

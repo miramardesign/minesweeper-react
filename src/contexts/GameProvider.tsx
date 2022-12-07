@@ -9,7 +9,8 @@ export const initialState: GameState = {
   uncoveredCells: 0,
   flagsPlaced: 0,
   gameStateDisplay: GameStateDisplay.UNSTARTED,
-  gridSize: "beginner",
+  gridSize: "test",
+ // gridSize: "beginner",
   mineData: [] as CellData[][]
 };
 
