@@ -202,7 +202,32 @@ const loopAdjCells = (
     dispatch: React.Dispatch<GameActions>
   ) => void
 ) => {
-  let perimeter: PerimeterDirections = {
+  const perimeterCells: PerimeterDirections = getPerimeterCells(iRow, iCol);
+
+  for (let direction in perimeterCells) {
+    let cell = perimeterCells[direction as PerimeterDirectionsKeys];
+    if (existsCell(cell.iRow, cell.iCol, mineData)) {
+      cb(cell.iRow, cell.iCol, mineData, dispatch);
+    }
+  }
+};
+
+/**
+ * object containing data of coords on every adjacent
+ *  cell of a given cell by iCol and iRow
+ * @param iRow
+ * @param iCol
+ */
+const getPerimeterCells = (iRow: number, iCol: number) => {
+  //todo exclude out of bounds cells, so i dont have to loop thru them
+  //and call exists.
+  let iRowMinus1 = iRow - 1;
+  let iRowPlus1 = iRow + 1;
+
+  let iColMinus1 = iCol - 1;
+  let iConPlus1 = iCol + 1;
+
+  const perimeterCells: PerimeterDirections = {
     northWest: {
       iRow: iRow - 1,
       iCol: iCol - 1,
@@ -227,19 +252,7 @@ const loopAdjCells = (
     southEast: { iRow: iRow + 1, iCol: iCol + 1 },
   };
 
-  for (let direction in perimeter) {
-    let cell = perimeter[direction as PerimeterDirectionsKeys];
-    if (existsCell(cell.iRow, cell.iCol, mineData)) {
-      // console.log(cell, "cellllllll");
-      cb(cell.iRow, cell.iCol, mineData, dispatch);
-    }   
-  }
-
-  // Object.entries(perimeter).forEach(([key, cell], index) => {
-  //   if (existsCell(cell.iRow, cell.iCol, mineData)) {
-  //     cb(cell.iRow, cell.iCol, mineData, dispatch);
-  //   }
-  // });
+  return perimeterCells;
 };
 
 /**
@@ -321,7 +334,7 @@ const getGameSize = (gridSize: GameTypesKeys): GameConfig => {
  * @param iCol
  * @param mineData
  * @param dispatch
- * @returns
+ * @returns CellData[][]
  */
 const uncoverAdjacentZeroSqs = (
   iRow: number,
@@ -329,39 +342,37 @@ const uncoverAdjacentZeroSqs = (
   mineData: CellData[][],
   dispatch: React.Dispatch<GameActions>
 ) => {
-  if (mineData[iRow][iCol].numAdjMines === 0) {
-    loopAdjCells(
-      iRow,
-      iCol,
-      mineData,
-      dispatch,
-      (
-        iRow: number,
-        iCol: number,
-        mineData: CellData[][],
-        dispatch: React.Dispatch<GameActions>
-      ) => {
-        let cell = mineData[iRow][iCol];
 
-        //why 4? i forget. todo rename...
-        const minSiblingMines = 4;
+  const recallSelfCB = (
+    iRow: number,
+    iCol: number,
+    mineData: CellData[][],
+    dispatch: React.Dispatch<GameActions>
+  ) => {
+    let cell = mineData[iRow][iCol];
 
-        if (cell.numAdjMines < minSiblingMines) {
-          //dont hit already hit mines...
-          if (!cell.uncovered) {
-            //IMPORTANT increment state.uncovered cells~~~
-            cell.uncovered = true;
+    //why 4? i forget. todo rename...
+    const minSiblingMines = 4;
 
-            dispatch({
-              type: GameActionType.INCREMENT_UNCOVER_CELL,
-            });
+    if (cell.numAdjMines < minSiblingMines) {
+      //dont hit already hit mines...
+      if (!cell.uncovered) {
+        //IMPORTANT increment state.uncovered cells~~~
+        cell.uncovered = true;
 
-            //call neighborcells recursion!!---
-            uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
-          }
-        }
+        dispatch({
+          type: GameActionType.INCREMENT_UNCOVER_CELL,
+        });
+
+        //call neighborcells recursion!!---
+        uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
       }
-    );
+    }
+  };
+
+  if (mineData[iRow][iCol].numAdjMines === 0) {
+    //const perimeterCells: PerimeterDirections = getPerimeterCells(iRow, iCol);
+    loopAdjCells(iRow, iCol, mineData, dispatch, recallSelfCB);
   }
 
   return mineData;
@@ -417,18 +428,15 @@ const onLoseCondition = (
  * @param gridSize
  */
 const resetGrid = (
-  gridSize: GameTypesKeys,
   dispatch: React.Dispatch<GameActions>,
   initialState: GameState,
-  caller: string
 ) => {
   dispatch({
     type: GameActionType.RESET_GAME,
     payload: initialState,
   });
-  console.log("reset grid called size", gridSize, "caller:", caller);
 
-  const { rows, cols, mines } = getGameSize(gridSize);
+  const { rows, cols, mines } = getGameSize(initialState.gridSize);
 
   let mineDataLocal = getGridDataStructure(rows, cols, mines);
   dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineDataLocal });

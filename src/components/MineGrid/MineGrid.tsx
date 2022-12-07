@@ -79,7 +79,8 @@ const MineGrid = () => {
     /** gridSize dropdown changes, */
     useEffect(() => {
       console.log("gridsized changed.........to....", state.gridSize);
-      resetGrid(state.gridSize, dispatch, initialState, 'useeffect 82');
+      const localState = {...initialState, gridSize: state.gridSize};
+      resetGrid( dispatch, localState);
     }, [state.gridSize]);
 
   /**
@@ -87,7 +88,7 @@ const MineGrid = () => {
    * @param e event of clicked element.
    */
   const handleOnClickResetGrid = () => {
-    resetGrid(state.gridSize, dispatch, initialState, 'handleOnClickResetGrid');
+    resetGrid(dispatch, initialState);
   };
 
   return (
