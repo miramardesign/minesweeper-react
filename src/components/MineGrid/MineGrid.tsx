@@ -83,18 +83,15 @@ const MineGrid = () => {
    */
   const handleOnClickResetGrid = () => {
     const localState = {...initialState, gridSize: state.gridSize};
-
     resetGrid(dispatch, localState);
   };
 
     /** gridSize dropdown changes, */
   const handleOnChangeSize = (gridSize: GameTypesKeys) => {
     console.log('size changed', gridSize );
-    //useEffect(() => {
       console.log("gridsized changed.........to....", gridSize);
       const localState = {...initialState, gridSize: gridSize};
       resetGrid( dispatch, localState);
-    //resetGrid(dispatch, initialState);
   };
 
   return (
