@@ -5,21 +5,29 @@ import { GameActionType } from "../../types/state";
 import { GameSizes } from "../../utils/mineSetupData";
 import styles from "./GameSizeChooser.module.scss";
 
-const GameSizeChooser = () => {
-  const { dispatch } = useContext(GameContext);
 
-  const handleGameSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    dispatch({
-      type: GameActionType.CHOOSE_SIZE,
-      payload: e.target.value as GameTypesKeys,
-    });
+type GameSizeChooserProps = {
+  chooseGameSize: (value: GameTypesKeys)  => void;
+}
+
+const GameSizeChooser = ({
+  chooseGameSize
+}: GameSizeChooserProps) => {
+ // const { dispatch } = useContext(GameContext);
+
+  const handleChooseGameSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    // dispatch({
+    //   type: GameActionType.CHOOSE_SIZE,
+    //   payload: e.target.value as GameTypesKeys,
+    // });
+    chooseGameSize( e.target.value as GameTypesKeys);
   };
 
   return (
     <select
       id="choose-game-size"
       className={styles["wide"]}
-      onChange={handleGameSizeChange}
+      onChange={handleChooseGameSizeChange}
     >
       {Object.keys(GameSizes).map((size) => (
         <option key={size} value={size}>
