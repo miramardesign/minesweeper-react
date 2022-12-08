@@ -8,7 +8,7 @@ import {
   PerimeterDirectionsKeys,
 } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
-import { GameSizes, perimeterCellsOffsets } from "./mineSetupData";
+import { GameSizes, perimeterCellsOffsets, PERIMETER_CELLS_OFFSETS } from "./mineSetupData";
 
 const getRandInt = (min: number, max: number) => {
   return Math.floor(Math.random() * max);
@@ -195,7 +195,7 @@ const isMine = (iRow: number, iCol: number, mineData: CellData[][]) => {
  * @param iRow
  * @param iCol
  * @param mineData
- * @param cb
+ * @param cb callback that calls a fn on every cell of perimeter.
  */
 const loopAdjCells = (
   iRow: number,
@@ -254,9 +254,8 @@ const getPerimeterCells = (iRow: number, iCol: number, numRows: number, numCols:
 
   const perimeterCellsDynamic: PerimeterDirections = {};
 
-
-  for (let direction in perimeterCellsOffsets) {
-    let cellOffset = perimeterCellsOffsets[direction as PerimeterDirectionsKeys];
+  for (let direction in PERIMETER_CELLS_OFFSETS) {
+    let cellOffset = PERIMETER_CELLS_OFFSETS[direction as PerimeterDirectionsKeys];
      
     let offSetIrow = cellOffset.iRow + iRow;
     let offSetIcol = cellOffset.iCol + iCol;

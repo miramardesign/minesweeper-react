@@ -12,6 +12,7 @@ import {
 import {
   CellData,
   GameStateDisplay,
+  GameTypesKeys,
 } from "../../types/mineTypes";
 import { GameSizes } from "../../utils/mineSetupData";
 import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
@@ -76,24 +77,29 @@ const MineGrid = () => {
      onLoseCondition(-1, -1, state.mineData, dispatch);
   };
 
-    /** gridSize dropdown changes, */
-    useEffect(() => {
-      console.log("gridsized changed.........to....", state.gridSize);
-      const localState = {...initialState, gridSize: state.gridSize};
-      resetGrid( dispatch, localState);
-    }, [state.gridSize]);
-
   /**
    * smiley face / frowny face clicked.
    * @param e event of clicked element.
    */
   const handleOnClickResetGrid = () => {
-    resetGrid(dispatch, initialState);
+    const localState = {...initialState, gridSize: state.gridSize};
+
+    resetGrid(dispatch, localState);
+  };
+
+    /** gridSize dropdown changes, */
+  const handleOnChangeSize = (gridSize: GameTypesKeys) => {
+    console.log('size changed', gridSize );
+    //useEffect(() => {
+      console.log("gridsized changed.........to....", gridSize);
+      const localState = {...initialState, gridSize: gridSize};
+      resetGrid( dispatch, localState);
+    //resetGrid(dispatch, initialState);
   };
 
   return (
     <section>
-      <GameSizeChooser />
+      <GameSizeChooser chooseGameSize={handleOnChangeSize} />
       <article id="wrap-row-digital-display-reset">
         <DigitalDisplay
           id={"mines-remaining"}

@@ -28,7 +28,7 @@ export const GameSizes: GameTypes = {
  * basically defines the relative position of the directions.
  * so i could loop thru them instead of hard-coding.
  */
-export const perimeterCellsOffsets: PerimeterDirectionsOffsets = {
+export const PERIMETER_CELLS_OFFSETS: PerimeterDirectionsOffsets = {
   northWest: {
     iRow: -1,
     iCol: -1,
