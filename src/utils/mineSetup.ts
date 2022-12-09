@@ -8,7 +8,11 @@ import {
   PerimeterDirectionsKeys,
 } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
-import { GameSizes, perimeterCellsOffsets, PERIMETER_CELLS_OFFSETS } from "./mineSetupData";
+import {
+  GameSizes,
+  perimeterCellsOffsets,
+  PERIMETER_CELLS_OFFSETS,
+} from "./mineSetupData";
 
 const getRandInt = (min: number, max: number) => {
   return Math.floor(Math.random() * max);
@@ -16,10 +20,10 @@ const getRandInt = (min: number, max: number) => {
 
 /**
  * depping since im checking cell boounds now.
- * @param iRow 
- * @param iCol 
- * @param mineData 
- * @returns 
+ * @param iRow
+ * @param iCol
+ * @param mineData
+ * @returns
  */
 const existsCell = (iRow: number, iCol: number, mineData: CellData[][]) => {
   // console.log('existscelllllllllllllll', iRow);
@@ -209,12 +213,16 @@ const loopAdjCells = (
     dispatch: React.Dispatch<GameActions>
   ) => void
 ) => {
-
   //TODO: pass in from gamestate.
   const numRows = mineData.length;
-  const numCols = mineData[0].length ;
+  const numCols = mineData[0].length;
 
-  const perimeterCells: PerimeterDirections = getPerimeterCells(iRow, iCol, numRows,numCols);
+  const perimeterCells: PerimeterDirections = getPerimeterCells(
+    iRow,
+    iCol,
+    numRows,
+    numCols
+  );
 
   //depped because i had too much data, e.g. prefiiltered out of bounds cells.
   // for (let direction in perimeterCells) {
@@ -225,9 +233,8 @@ const loopAdjCells = (
   // }
 
   Object.entries(perimeterCells).forEach(([key, cell], index) => {
-    cb(cell.iRow, cell.iCol, mineData, dispatch);    
+    cb(cell.iRow, cell.iCol, mineData, dispatch);
   });
-
 };
 
 const bothInBounds = (
@@ -236,8 +243,8 @@ const bothInBounds = (
   numRows: number,
   numCols: number
 ): boolean => {
-  const rowInBounds = iRow > -1 && iRow < numRows ;
-  const colInBounds = iCol > -1 && iCol < numCols ;
+  const rowInBounds = iRow > -1 && iRow < numRows;
+  const colInBounds = iCol > -1 && iCol < numCols;
 
   return rowInBounds && colInBounds;
 };
@@ -248,15 +255,24 @@ const bothInBounds = (
  * @param iRow
  * @param iCol
  */
-const getPerimeterCells = (iRow: number, iCol: number, numRows: number, numCols: number) => {
-  //todo exclude out of bounds cells, so i dont have to loop thru them
+const getPerimeterCells = (
+  iRow: number,
+  iCol: number,
+  numRows: number,
+  numCols: number
+) => {
+  //exclude out of bounds cells, so i dont have to loop thru them
   //and call exists.
 
   const perimeterCellsDynamic: PerimeterDirections = {};
 
+  //loop thru the offsets global CONST for each cardinal direction,
+  //if they are in bounds of the grid, add them to the cells dynamic,
+  //such that cells dynamic only has valid cells. (theoretically)
   for (let direction in PERIMETER_CELLS_OFFSETS) {
-    let cellOffset = PERIMETER_CELLS_OFFSETS[direction as PerimeterDirectionsKeys];
-     
+    let cellOffset =
+      PERIMETER_CELLS_OFFSETS[direction as PerimeterDirectionsKeys];
+
     let offSetIrow = cellOffset.iRow + iRow;
     let offSetIcol = cellOffset.iCol + iCol;
     if (bothInBounds(offSetIrow, offSetIcol, numRows, numCols)) {
@@ -264,49 +280,43 @@ const getPerimeterCells = (iRow: number, iCol: number, numRows: number, numCols:
         iRow: offSetIrow,
         iCol: offSetIcol,
       };
-    } 
+    }
   }
 
-  console.log('perimeter cells of ', [iRow, iCol], perimeterCellsDynamic, '---');
+  console.log(
+    "perimeter cells of ",
+    [iRow, iCol],
+    perimeterCellsDynamic,
+    "---"
+  );
 
-  // const iRowMinus1 = iRow - 1;
-  // const iRowPlus1 = iRow + 1;
-
-  // const iColMinus1 = iCol - 1;
-  // const iConPlus1 = iCol + 1;
  
-  // if (bothInBounds(iRowMinus1, iRowPlus1, numRows, numCols)) {
-  //   perimeterCellsNew.northWest = {
-  //     iRow: iRowMinus1,
-  //     iCol: iColMinus1,
-  //   };
-  // } 
 
   //depping
-  const perimeterCells: PerimeterDirections = {
-    northWest: {
-      iRow: iRow - 1,
-      iCol: iCol - 1,
-    },
-    north: {
-      iRow: iRow - 1,
-      iCol: iCol,
-    },
-    northEast: { iRow: iRow - 1, iCol: iCol + 1 },
+  // const perimeterCells: PerimeterDirections = {
+  //   northWest: {
+  //     iRow: iRow - 1,
+  //     iCol: iCol - 1,
+  //   },
+  //   north: {
+  //     iRow: iRow - 1,
+  //     iCol: iCol,
+  //   },
+  //   northEast: { iRow: iRow - 1, iCol: iCol + 1 },
 
-    west: { iRow: iRow, iCol: iCol - 1 },
-    east: { iRow: iRow, iCol: iCol + 1 },
+  //   west: { iRow: iRow, iCol: iCol - 1 },
+  //   east: { iRow: iRow, iCol: iCol + 1 },
 
-    southWest: {
-      iRow: iRow + 1,
-      iCol: iCol - 1,
-    },
-    south: {
-      iRow: iRow + 1,
-      iCol: iCol,
-    },
-    southEast: { iRow: iRow + 1, iCol: iCol + 1 },
-  };
+  //   southWest: {
+  //     iRow: iRow + 1,
+  //     iCol: iCol - 1,
+  //   },
+  //   south: {
+  //     iRow: iRow + 1,
+  //     iCol: iCol,
+  //   },
+  //   southEast: { iRow: iRow + 1, iCol: iCol + 1 },
+  // };
 
   return perimeterCellsDynamic;
 };
@@ -322,7 +332,7 @@ const getGridDataStructure = (
   numRows: number,
   numCols: number,
   numMines: number
-) => {
+): CellData[][] => {
   let mineData = new Array(numRows).fill([]).map(() => {
     return new Array(numCols).fill({}).map((element: CellData) => {
       return {
@@ -336,6 +346,18 @@ const getGridDataStructure = (
 
   return mineData;
 };
+
+/**
+ * same as above but joined params.
+ * @param gameConfig 
+ * @returns 
+ */
+const getGridDataStructureFromGameConfig = (gameConfig: GameConfig) => {
+  const { rows, cols, mines } = gameConfig;
+  return getGridDataStructure(rows, cols, mines);
+
+}
+
 
 /**
  * places mines and adjacent mine data and pushes into storage,
@@ -389,9 +411,8 @@ const uncoverAdjacentZeroSqsRecursiveCallback = (
   mineData: CellData[][],
   dispatch: React.Dispatch<GameActions>
 ) => {
-
-  if(!existsCell(iRow, iCol, mineData)){
-    console.error('cell at ', iRow, iCol, 'does not exist');
+  if (!existsCell(iRow, iCol, mineData)) {
+    console.error("cell at ", iRow, iCol, "does not exist");
   }
 
   let cell = mineData[iRow][iCol];
@@ -666,6 +687,7 @@ const setCellMark = (
 
 export {
   getGridDataStructure,
+  getGridDataStructureFromGameConfig,
   getMineData,
   isMine,
   isLoseCondition,

@@ -1,6 +1,9 @@
 import React, { createContext, PropsWithChildren, useReducer } from "react";
-import { CellData, GameStateDisplay } from "../types/mineTypes";
+import { CellData, GameStateDisplay, GameTypes } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
+import { getGameSize, getGridDataStructure, getGridDataStructureFromGameConfig } from "../utils/mineSetup";
+
+export const gridSizeSeparate: keyof GameTypes = "test";
 
 export const initialState: GameState = {
   isLost: false,
@@ -9,9 +12,11 @@ export const initialState: GameState = {
   uncoveredCells: 0,
   flagsPlaced: 0,
   gameStateDisplay: GameStateDisplay.UNSTARTED,
-  gridSize: "test",
- // gridSize: "beginner",
-  mineData: [] as CellData[][]
+  gridSize: gridSizeSeparate,
+ // gridSize: "beginner", 
+
+ //mineData: [] as CellData[][],
+ mineData: getGridDataStructureFromGameConfig(getGameSize(gridSizeSeparate)),
 };
 
 export const GameContext = createContext<{

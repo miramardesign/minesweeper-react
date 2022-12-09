@@ -27,11 +27,12 @@ const MineGrid = () => {
   const { state, dispatch } = useContext(GameContext);
 
   //component load setup.
-  useEffect(() => {
-    const { rows, cols, mines } = getGameSize(state.gridSize);
-    let mineData: CellData[][] = getGridDataStructure(rows, cols, mines);
-    dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
-  }, []);
+  //useEffect(() => {
+    /* moving to reducer/initial state */
+    // const { rows, cols, mines } = getGameSize(state.gridSize);
+    // let mineData: CellData[][] = getGridDataStructure(rows, cols, mines);
+    //dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
+  //}, []);
 
   /**
    * clicked and run the turn.
