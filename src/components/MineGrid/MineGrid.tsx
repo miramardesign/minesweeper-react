@@ -19,7 +19,7 @@ import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
 import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountup";
 import GameSizeChooser from "../GameSizeChooser/GameSizeChooser";
 import { GameContext, initialState } from "../../contexts/GameProvider";
-import {  GameActionType } from "../../types/state";
+import { GameActionType } from "../../types/state";
 import GameStateButton from "../GameStateButton/GameStateButton";
 import MineDataMap from "../MineDataMap/MineDataMap";
 
@@ -35,23 +35,21 @@ const MineGrid = () => {
 
   /**
    * clicked and run the turn.
-   * @param iRow 
-   * @param iCol 
+   * @param iRow
+   * @param iCol
    */
   const handleLeftClick = (iRow: number, iCol: number) => {
     if (state.uncoveredCells === 0) {
-      dispatch({ type: GameActionType.SET_START, payload: true }); 
-      getMineData(iRow, iCol, state, dispatch);     
+      dispatch({ type: GameActionType.SET_START, payload: true });
+      getMineData(iRow, iCol, state, dispatch);
     }
     goTurn(iRow, iCol, state, dispatch);
   };
 
   /**
    * just changes display :) :() :( Gamestatedisplay.
-   * @param iRow 
-   * @param iCol 
    */
-  const handleLeftOnMouseDown = (iRow: number, iCol: number) => {
+  const handleLeftOnMouseDown = () => {
     dispatch({
       type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
       payload: GameStateDisplay.DANGER,
@@ -60,8 +58,8 @@ const MineGrid = () => {
 
   /**
    * set a marker on right click.
-   * @param iRow 
-   * @param iCol 
+   * @param iRow
+   * @param iCol
    */
   const handleRightClick = (iRow: number, iCol: number) => {
     //has a small bug on 3rd clic..
@@ -70,11 +68,11 @@ const MineGrid = () => {
 
   /**
    * when the timer countup says we are out of time.
-   * @param msg 
+   * @param msg
    */
   const handleTimeout = (msg: string) => {
     console.log(msg);
-     onLoseCondition(-1, -1, state.mineData, dispatch);
+    onLoseCondition(-1, -1, state.mineData, dispatch);
   };
 
   /**
@@ -82,16 +80,16 @@ const MineGrid = () => {
    * @param e event of clicked element.
    */
   const handleOnClickResetGrid = () => {
-    const localState = {...initialState, gridSize: state.gridSize};
+    const localState = { ...initialState, gridSize: state.gridSize };
     resetGrid(dispatch, localState);
   };
 
-    /** gridSize dropdown changes, */
+  /** gridSize dropdown changes, */
   const handleOnChangeSize = (gridSize: GameTypesKeys) => {
-    console.log('size changed', gridSize );
-      console.log("gridsized changed.........to....", gridSize);
-      const localState = {...initialState, gridSize: gridSize};
-      resetGrid( dispatch, localState);
+    console.log("size changed", gridSize);
+    console.log("gridsized changed.........to....", gridSize);
+    const localState = { ...initialState, gridSize: gridSize };
+    resetGrid(dispatch, localState);
   };
 
   return (
