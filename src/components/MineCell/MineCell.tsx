@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { CellData } from "../../types/mineTypes";
 import styles from "./MineCell.module.scss";
 
@@ -31,6 +31,10 @@ const MineCell = ({
     e.preventDefault();
     rightClick(iRow, iCol);
   };
+
+  useEffect( () => {
+    console.log('cell not showing???', cell);
+  }, [cell])
 
   return (
     <button

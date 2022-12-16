@@ -8,13 +8,9 @@ import {
   PerimeterDirectionsKeys,
 } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
-import {
-  GameSizes,
-  perimeterCellsOffsets,
-  PERIMETER_CELLS_OFFSETS,
-} from "./mineSetupData";
+import { GameSizes, PERIMETER_CELLS_OFFSETS } from "./mineSetupData";
 
-const getRandInt = (min: number, max: number) => {
+const getRandPosInt = (max: number) => {
   return Math.floor(Math.random() * max);
 };
 
@@ -57,27 +53,32 @@ const placeMines = (
   rowInitialCell: number,
   colInitialCell: number
 ) => {
-  let minesPlacedLocal = 0;
+  let minesAlreadyPlaced = 0;
 
-  while (minesPlacedLocal < numMines) {
-    let rowRand = getRandInt(0, numRows);
-    let colRand = getRandInt(0, numCols);
+  while (minesAlreadyPlaced < numMines) {
+    let rowRand = getRandPosInt(numRows);
+    let colRand = getRandPosInt(numCols);
 
     if (existsCell(rowRand, colRand, mineData)) {
       let cell = mineData[rowRand][colRand];
 
-      //TODO exclude the first clicked cell, from bombs placed.
+      //excludes the first clicked cell, from bombs placed.
       const isInitialCell =
-        rowRand === rowInitialCell || colRand === colInitialCell;
+        rowRand === rowInitialCell && colRand === colInitialCell;
 
       //choose other celll.
       if (cell.hasMine || isInitialCell) {
-        // if (cell.hasMine) {
-        console.log("mine collision");
+        const randDirPos: boolean = (getRandPosInt(1) ? 0 : 1) === 1;
+        console.log(randDirPos, "randdirPositvie");
+        const newColRand = getRandPosInt(numCols);
+
+        console.log(
+          "mine collision, just jump another random num of spaces and loop until you find an empty space?"
+        );
       } else {
         cell.hasMine = true;
 
-        minesPlacedLocal++;
+        minesAlreadyPlaced++;
       }
     }
   }
@@ -86,24 +87,171 @@ const placeMines = (
 };
 
 /**
+ * instead of randomly placing mines, place the mines in order, and shuffle.
+ * fischer-yates. https://dev.to/codebubb/how-to-shuffle-an-array-in-javascript-2ikj
+ * @param array array to shuffle
+ * @returns
+ */
+const shuffleArray = (array: string[] | any[]): any[] => {
+  for (let curI = array.length - 1; curI > 0; curI--) {
+    const destI = Math.floor(Math.random() * (curI + 1));
+    const tempNode = array[curI];
+    array[curI] = array[destI];
+    array[destI] = tempNode;
+  }
+  return array;
+};
+
+/**
+ * translates address of click
+ * @param numCols
+ * @param rowInitialCell
+ * @param colInitialCell
+ * @returns
+ */
+const getInitialCellIndexOneDim = (
+  numCols: number,
+  rowInitialCell: number,
+  colInitialCell: number
+): number => {
+  let initialCellOneDim = rowInitialCell * numCols + colInitialCell;
+
+  return initialCellOneDim;
+};
+
+//i thinhk this only moves mines one or two over, so if they
+//neighbor swapping.
+//are previously bunched up, then they will still be pretty grouped.
+const shuffleSort = (a: any, b: any) => Math.random() - 0.5;
+
+/**
+ * place mines in single dimensional array using a random chance
+ * and then call shuffle.
+ * the num of mines is the prescribed number
+ * @param mineData
+ * @param numRows
+ * @param numCols
+ * @param numMines
+ * @returns
+ */
+const placeMinesShuffled = (
+  numRows: number,
+  numCols: number,
+  numMines: number,
+  rowInitialCell: number,
+  colInitialCell: number,
+  msg: string = ""
+) => {
+  console.log("placeMinesShuffled called by ", msg);
+  let minesAlreadyPlaced = 0;
+  const numCells = numRows * numCols;
+  let mineChance = 1.25 - numMines / numCells;
+  let mineDataLocalOneDim: CellData[] = new Array(numRows * numCols)
+    .fill([])
+    .map((element, index) => {
+      const hasMineElement = minesAlreadyPlaced < numMines; // && Math.random() > mineChance;
+      console.log("mapping index", index, "hasMineElemnt", hasMineElement);
+      // element.markedAs = "";
+      // element.hasMine = false;
+      // element.uncovered = false;
+      // element.numAdjMines = 6;
+
+      element.origIndex = index;
+      if (hasMineElement) {
+        minesAlreadyPlaced++;
+        ///  element.hasMine = true;
+      }
+      // return element;
+
+      return {
+        hasMine: hasMineElement,
+        markedAs: "",
+        uncovered: false,
+        numAdjMines: -1,
+        origIndex: index,
+      };
+    });
+
+  if (minesAlreadyPlaced < numMines) {
+    console.error("not enough mines placed, place more", minesAlreadyPlaced);
+  }
+
+  // mineDataLocalOneDim.sort(shuffleSort);
+  mineDataLocalOneDim = shuffleArray(mineDataLocalOneDim);
+
+  //if initial cell is a bomb after shuffle move the bomb to the next available space, or randomly choose direction first
+  const initialCellOneDim = getInitialCellIndexOneDim(
+    numCols,
+    rowInitialCell,
+    colInitialCell
+  );
+
+  if (mineDataLocalOneDim[initialCellOneDim].hasMine) {
+    console.error("user clicked on mine initally; move it!");
+  }
+
+  let mineData = singleArrayToMultiArray(mineDataLocalOneDim, numCols);
+
+  console.log("mineDataLocalOneDim after shuffle", mineDataLocalOneDim);
+  console.log("mineDataFilled after shuffle", mineData);
+  return mineData;
+};
+
+/**
+ * go from 1 dim to 2 dimensions, with a prescribe number of cols in a row
+ * @param bigArray
+ * @param numCols
+ * @returns
+ */
+const singleArrayToMultiArray = (bigArray: any[], numCols: number): any[][] => {
+  let arrayOfArrays = [];
+  for (let i = 0; i < bigArray.length; i += numCols) {
+    arrayOfArrays.push(bigArray.slice(i, i + numCols));
+  }
+
+  return arrayOfArrays;
+};
+
+/**
  * put the adjacent mine date in the mine data.
  * @param mineData
  */
-const placeNumAdjMineData = (
-  mineData: CellData[][],
-  dispatch: React.Dispatch<GameActions>
+const placeNumAdjMineData = async (
+  mineData: CellData[][]
+  // dispatch: React.Dispatch<GameActions>
 ) => {
-  mineData.map((row, iRow) => {
-    row.map((cell, iCol) => {
+  // console.log(
+  //   "placeNumAdjMineData mineData lenght:",
+  //   mineData.length,
+  //   "first row lenght",
+  //   mineData[0].length
+  // );
+  await mineData.map((row, iRow) => {
+    //console.log("rowwwwwwwwwwwwwwwwww", row);
+
+    row.map(async (cell, iCol) => {
+      // console.log('colllllllllllllll', cell);
       cell.numAdjMines = 0;
-      loopAdjCells(
+      await loopAdjCells(
         iRow,
         iCol,
         mineData,
-        dispatch,
-        (iRow: number, iCol: number, mineData: CellData[][], dispatch) => {
+        //dispatch,
+        (
+          iRow: number,
+          iCol: number,
+          mineData: CellData[][]
+          // dispatch
+        ) => {
           if (existsAndIsMine(iRow, iCol, mineData)) {
+            console.log(
+              "numAdjMinesnumAdjMinesnumAdjMinesnumAdjMinesnumAdjMinesnumAdjMines",
+              cell.numAdjMines
+            );
+
             cell.numAdjMines++;
+          } else {
+            console.log("not mine", iRow, iCol);
           }
         }
       );
@@ -172,11 +320,15 @@ const existsAndIsMine = (
 ) => {
   //depp bc looper already calls.
   if (!existsCell(iRow, iCol, mineData)) {
+    console.log("ret false bc not exisitn cell");
     return false;
   }
 
   //exists but is false
   if (mineData[iRow][iCol] && !mineData[iRow][iCol].hasMine) {
+    console.log("exists but is false");
+    console.log(mineData[iRow][iCol], "-------------");
+
     return false;
   }
 
@@ -185,6 +337,7 @@ const existsAndIsMine = (
     return true;
   }
 
+  console.log("returning false by default");
   return false;
 };
 
@@ -205,12 +358,12 @@ const loopAdjCells = (
   iRow: number,
   iCol: number,
   mineData: CellData[][],
-  dispatch: React.Dispatch<GameActions>,
+  //dispatch: React.Dispatch<GameActions>,
   cb: (
     iRow: number,
     iCol: number,
-    mineData: CellData[][],
-    dispatch: React.Dispatch<GameActions>
+    mineData: CellData[][]
+    //dispatch: React.Dispatch<GameActions>
   ) => void
 ) => {
   //TODO: pass in from gamestate.
@@ -233,7 +386,7 @@ const loopAdjCells = (
   // }
 
   Object.entries(perimeterCells).forEach(([key, cell], index) => {
-    cb(cell.iRow, cell.iCol, mineData, dispatch);
+    cb(cell.iRow, cell.iCol, mineData);
   });
 };
 
@@ -283,63 +436,32 @@ const getPerimeterCells = (
     }
   }
 
-  console.log(
-    "perimeter cells of ",
-    [iRow, iCol],
-    perimeterCellsDynamic,
-    "---"
-  );
-
- 
-
-  //depping
-  // const perimeterCells: PerimeterDirections = {
-  //   northWest: {
-  //     iRow: iRow - 1,
-  //     iCol: iCol - 1,
-  //   },
-  //   north: {
-  //     iRow: iRow - 1,
-  //     iCol: iCol,
-  //   },
-  //   northEast: { iRow: iRow - 1, iCol: iCol + 1 },
-
-  //   west: { iRow: iRow, iCol: iCol - 1 },
-  //   east: { iRow: iRow, iCol: iCol + 1 },
-
-  //   southWest: {
-  //     iRow: iRow + 1,
-  //     iCol: iCol - 1,
-  //   },
-  //   south: {
-  //     iRow: iRow + 1,
-  //     iCol: iCol,
-  //   },
-  //   southEast: { iRow: iRow + 1, iCol: iCol + 1 },
-  // };
+  // console.log(
+  //   "perimeter cells of ",
+  //   [iRow, iCol],
+  //   perimeterCellsDynamic,
+  //   "---"
+  // );
 
   return perimeterCellsDynamic;
 };
 
 /**
- * generates an array with empty mine data to the proscribed number of rows and cells
- * @param numRows
- * @param numCols
- * @param numMines
+ * same as above but joined params.
+ * @param gameConfig
  * @returns
  */
-const getGridDataStructure = (
-  numRows: number,
-  numCols: number,
-  numMines: number
-): CellData[][] => {
-  let mineData = new Array(numRows).fill([]).map(() => {
-    return new Array(numCols).fill({}).map((element: CellData) => {
+const getGridDataStructureFromGameConfig = (gameConfig: GameConfig) => {
+  const { rows, cols } = gameConfig;
+  //return getGridDataStructure(rows, cols, mines);
+
+  let mineData = new Array(rows).fill([]).map(() => {
+    return new Array(cols).fill({}).map((element: CellData) => {
       return {
         hasMine: false,
         markedAs: "",
         uncovered: false,
-        numAdjMines: 0,
+        numAdjMines: -2,
       };
     });
   });
@@ -348,36 +470,56 @@ const getGridDataStructure = (
 };
 
 /**
- * same as above but joined params.
- * @param gameConfig 
- * @returns 
- */
-const getGridDataStructureFromGameConfig = (gameConfig: GameConfig) => {
-  const { rows, cols, mines } = gameConfig;
-  return getGridDataStructure(rows, cols, mines);
-
-}
-
-
-/**
  * places mines and adjacent mine data and pushes into storage,
  * for a given game size
- * @param iRow
- * @param iCol
+ * @param iRow row they clicked, i need this to avoid clicking the mine on 1st click
+ * @param iCol col ...
  * @param state
  * @param dispatch
  */
-const getMineData = (
+const getMineData = async (
   iRow: number,
   iCol: number,
   state: GameState,
   dispatch: React.Dispatch<GameActions>
 ) => {
   const { rows, cols, mines } = getGameSize(state.gridSize);
-  let mineDataLocal = placeMines(state.mineData, rows, cols, mines, iRow, iCol);
-  mineDataLocal = placeNumAdjMineData(mineDataLocal, dispatch);
 
-  dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineDataLocal });
+  // let mineDataLocalOlde = placeMines(
+  //   state.mineData,
+  //   rows,
+  //   cols,
+  //   mines,
+  //   iRow,
+  //   iCol
+  // );
+
+  let mineData = await placeMinesShuffled(
+    rows,
+    cols,
+    mines,
+    iRow,
+    iCol,
+    "getminedata.."
+  );
+
+  //  console.log('mineDataLocalOlde: ret', JSON.stringify( mineDataLocalOlde) );
+  //  console.log("mineDataLocal: after shuffle----------------", JSON.stringify(mineDataLocal));
+  mineData = await placeNumAdjMineData(mineData);
+  //console.log("mineDataLocal: after placeNumAdjMineData----------------", JSON.stringify(mineDataLocal));
+
+  // dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineDataLocal });
+
+  // mineDataLocalOlde = placeNumAdjMineData(mineDataLocalOlde);
+  // console.log(
+  //   "mineDataLocalOlde: placeNumAdjMineDataplaceNumAdjMineDataplaceNumAdjMineData",
+  //   JSON.stringify(mineDataLocalOlde)
+  // );
+  console.log(
+    "mineDataLocal: after placeNumAdjMineData----------------",
+    JSON.stringify(mineData)
+  );
+  return mineData;
 };
 
 /**
@@ -408,8 +550,8 @@ const getGameSize = (gridSize: GameTypesKeys): GameConfig => {
 const uncoverAdjacentZeroSqsRecursiveCallback = (
   iRow: number,
   iCol: number,
-  mineData: CellData[][],
-  dispatch: React.Dispatch<GameActions>
+  mineData: CellData[][]
+  // dispatch: React.Dispatch<GameActions>
 ) => {
   if (!existsCell(iRow, iCol, mineData)) {
     console.error("cell at ", iRow, iCol, "does not exist");
@@ -426,12 +568,13 @@ const uncoverAdjacentZeroSqsRecursiveCallback = (
       //IMPORTANT increment state.uncovered cells~~~
       cell.uncovered = true;
 
-      dispatch({
-        type: GameActionType.INCREMENT_UNCOVER_CELL,
-      });
+      // dispatch({
+      //   type: GameActionType.INCREMENT_UNCOVER_CELL,
+      // });
 
       //call neighborcells recursion!!---
-      uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
+      uncoverAdjacentZeroSqs(iRow, iCol, mineData);
+      // uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
     }
   }
 };
@@ -448,20 +591,51 @@ const uncoverAdjacentZeroSqsRecursiveCallback = (
 const uncoverAdjacentZeroSqs = (
   iRow: number,
   iCol: number,
-  mineData: CellData[][],
-  dispatch: React.Dispatch<GameActions>
+  mineData: CellData[][]
+  // dispatch: React.Dispatch<GameActions>
 ) => {
+  let newlyUncoveredCells = 0;
   if (mineData[iRow][iCol].numAdjMines === 0) {
-    // const perimeterCells: PerimeterDirections = getPerimeterCells(iRow, iCol, 4, 8);
     loopAdjCells(
       iRow,
       iCol,
       mineData,
-      dispatch,
-      uncoverAdjacentZeroSqsRecursiveCallback
+      // dispatch,
+      (
+        iRow: number,
+        iCol: number,
+        mineData: CellData[][]
+        // dispatch: React.Dispatch<GameActions>
+      ) => {
+        if (!existsCell(iRow, iCol, mineData)) {
+          console.error("cell at ", iRow, iCol, "does not exist");
+        }
+
+        let cell = mineData[iRow][iCol];
+
+        //why 4? i forget. todo rename...
+        const minSiblingMines = 4;
+
+        if (cell.numAdjMines < minSiblingMines) {
+          //dont hit already hit mines...
+          if (!cell.uncovered) {
+            //IMPORTANT increment state.uncovered cells~~~
+            cell.uncovered = true;
+
+            // dispatch({
+            //   type: GameActionType.INCREMENT_UNCOVER_CELL,
+            // });
+            newlyUncoveredCells++;
+
+            //call neighborcells recursion!!---
+            newlyUncoveredCells += uncoverAdjacentZeroSqs(iRow, iCol, mineData);
+            // uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
+          }
+        }
+      }
     );
   }
-  return mineData;
+  return newlyUncoveredCells;
 };
 
 /**
@@ -522,9 +696,9 @@ const resetGrid = (
     payload: initialState,
   });
 
-  const { rows, cols, mines } = getGameSize(initialState.gridSize);
+  const gs = getGameSize(initialState.gridSize);
 
-  let mineDataLocal = getGridDataStructure(rows, cols, mines);
+  let mineDataLocal = getGridDataStructureFromGameConfig(gs);
   dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineDataLocal });
   dispatch({ type: GameActionType.SET_END, payload: false });
 };
@@ -557,7 +731,7 @@ const uncoverCell = (
   iCol: number,
   mineData: CellData[][],
   gridSize: GameTypesKeys,
-  uncoveredCells: number,
+  previouslyUncoveredCells: number,
   dispatch: React.Dispatch<GameActions>
 ) => {
   if (isLoseCondition(iRow, iCol, mineData)) {
@@ -571,19 +745,20 @@ const uncoverCell = (
   }
 
   mineData[iRow][iCol].uncovered = true;
-  const numUncoveredLocal = uncoveredCells + 1;
-  dispatch({
-    type: GameActionType.UPDATE_UNCOVER_CELL,
-    payload: numUncoveredLocal,
-  });
+
 
   mineData[iRow][iCol].markedAs = "uncovered";
 
-  uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
+  let newlyUncoveredCells = uncoverAdjacentZeroSqs(iRow, iCol, mineData); //, dispatch);
+  let numUncoveredLocal = 1 + newlyUncoveredCells + previouslyUncoveredCells;
+
+  //get from recursion amount uncoverd and add current + previousl.
+  dispatch({
+    type: GameActionType.UPDATE_UNCOVER_CELL,
+    payload:numUncoveredLocal,
+  });
 
   dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
-
-  let numMines = GameSizes[gridSize].mines;
 
   let gameData = GameSizes[gridSize];
   if (isWinCondition(gameData, numUncoveredLocal)) {
@@ -615,9 +790,11 @@ const isWinCondition = (gameData: GameConfig, uncoveredCellsLen: number) => {
 const goTurn = (
   iRow: number,
   iCol: number,
+  mineData: CellData[][],
   state: GameState,
   dispatch: React.Dispatch<GameActions>
 ) => {
+  console.log("go turn called");
   //already lost.
   if (state.isLost) {
     return;
@@ -625,10 +802,11 @@ const goTurn = (
 
   console.log("clicked row ", iRow, "col", iCol);
 
+  //has bug resetting.
   uncoverCell(
     iRow,
     iCol,
-    state.mineData,
+    mineData,
     state.gridSize,
     state.uncoveredCells,
     dispatch
@@ -686,12 +864,12 @@ const setCellMark = (
 };
 
 export {
-  getGridDataStructure,
+  // getGridDataStructure,
   getGridDataStructureFromGameConfig,
   getMineData,
   isMine,
   isLoseCondition,
-  placeMines,
+  // placeMines,
   placeNumAdjMineData,
   placeCellMark,
   existsCell,

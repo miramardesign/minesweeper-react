@@ -3,8 +3,8 @@ import { GameTypes, PerimeterDirectionsOffsets } from "../types/mineTypes";
 export const GameSizes: GameTypes = {
     test:  {
       rows: 5,
-      cols: 4,
-      mines: 1,
+      cols: 5,
+      mines: 5,
     },
     beginner:  {
       rows: 8,

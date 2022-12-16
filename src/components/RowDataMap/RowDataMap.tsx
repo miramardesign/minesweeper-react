@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { CellData } from "../../types/mineTypes";
 import MineCell from "../MineCell/MineCell";
 
@@ -16,6 +17,11 @@ const RowDataMap = ({
   leftOnMouseDown,
   rightClick,
 }: RowDataMapProps) => {
+
+  useEffect( () => {
+    console.log('row not showing???', row);
+  }, [row])
+
 
   return (
     <div key={iRow}>

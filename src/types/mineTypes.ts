@@ -3,6 +3,7 @@ export interface CellData {
   markedAs: string;
   uncovered: boolean;
   numAdjMines: number;
+  origIndex?: number; //to help me track shuffling 
 }
 
 export interface RowData {

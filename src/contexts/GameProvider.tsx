@@ -1,9 +1,11 @@
-import React, { createContext, PropsWithChildren, useReducer } from "react";
-import { CellData, GameStateDisplay, GameTypes } from "../types/mineTypes";
+import React, {cloneElement, createContext, PropsWithChildren, useReducer } from "react";
+import {  GameStateDisplay, GameTypes } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
-import { getGameSize, getGridDataStructure, getGridDataStructureFromGameConfig } from "../utils/mineSetup";
+import { getGameSize, getGridDataStructureFromGameConfig } from "../utils/mineSetup";
 
 export const gridSizeSeparate: keyof GameTypes = "test";
+
+export const emptyMineDataStructure = getGridDataStructureFromGameConfig(getGameSize(gridSizeSeparate));
 
 export const initialState: GameState = {
   isLost: false,
@@ -14,9 +16,9 @@ export const initialState: GameState = {
   gameStateDisplay: GameStateDisplay.UNSTARTED,
   gridSize: gridSizeSeparate,
  // gridSize: "beginner", 
-
- //mineData: [] as CellData[][],
- mineData: getGridDataStructureFromGameConfig(getGameSize(gridSizeSeparate)),
+ 
+ mineData: emptyMineDataStructure,
+ mineDataOlde:  JSON.parse(JSON.stringify(emptyMineDataStructure)),
 };
 
 export const GameContext = createContext<{
@@ -80,6 +82,11 @@ const reducer = (state: GameState, action: GameActions): GameState => {
         ...state,
         uncoveredCells: state.uncoveredCells + 1,
       };
+    case GameActionType.SET_UNCOVER_CELL:
+      return {
+        ...state,
+        uncoveredCells: action.payload,
+      };
     case GameActionType.INCREMENT_FLAGS_PLACED:
       return {
         ...state,
@@ -99,7 +106,12 @@ const reducer = (state: GameState, action: GameActions): GameState => {
       return {
         ...state,
         mineData: action.payload,
-      }
+      };
+    case GameActionType.SET_MINE_DATA_OLDE:
+      return {
+        ...state,
+        mineDataOlde: action.payload,
+      };
     case GameActionType.RESET_GAME:
       return initReducer(action.payload);
     default:

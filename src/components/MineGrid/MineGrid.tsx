@@ -1,8 +1,7 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext } from "react";
 import styles from "./MineGrid.module.scss";
 import {
-  getGameSize,
-  getGridDataStructure,
+ 
   getMineData,
   goTurn,
   onLoseCondition,
@@ -10,7 +9,6 @@ import {
   setCellMark,
 } from "../../utils/mineSetup";
 import {
-  CellData,
   GameStateDisplay,
   GameTypesKeys,
 } from "../../types/mineTypes";
@@ -26,25 +24,21 @@ import MineDataMap from "../MineDataMap/MineDataMap";
 const MineGrid = () => {
   const { state, dispatch } = useContext(GameContext);
 
-  //component load setup.
-  //useEffect(() => {
-    /* moving to reducer/initial state */
-    // const { rows, cols, mines } = getGameSize(state.gridSize);
-    // let mineData: CellData[][] = getGridDataStructure(rows, cols, mines);
-    //dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
-  //}, []);
-
   /**
    * clicked and run the turn.
    * @param iRow
    * @param iCol
    */
-  const handleLeftClick = (iRow: number, iCol: number) => {
+  const handleLeftClick = async (iRow: number, iCol: number) => {
+
+    let mineData = state.mineData;
     if (state.uncoveredCells === 0) {
       dispatch({ type: GameActionType.SET_START, payload: true });
-      getMineData(iRow, iCol, state, dispatch);
+      mineData = await getMineData(iRow, iCol, state, dispatch);
+      dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
+
     }
-    goTurn(iRow, iCol, state, dispatch);
+    goTurn(iRow, iCol, mineData, state, dispatch);
   };
 
   /**
@@ -94,7 +88,16 @@ const MineGrid = () => {
   };
 
   return (
+
     <section>
+      ==================================================================
+      minedata new broke, wont put adjacent data{JSON.stringify(state.mineData)}
+      <br />
+      ====================================================
+     unconvered cells {state.uncoveredCells}
+     
+     {/* minedata olde, ineffecting placing mech.  {JSON.stringify(state.mineDataOlde)} */}
+
       <GameSizeChooser chooseGameSize={handleOnChangeSize} />
       <article id="wrap-row-digital-display-reset">
         <DigitalDisplay
