@@ -149,7 +149,8 @@ const placeMinesShuffled = (
   let mineDataLocalOneDim: CellData[] = new Array(numRows * numCols)
     .fill([])
     .map((element, index) => {
-      const hasMineElement = minesAlreadyPlaced < numMines && Math.random() > 0.5;
+      const hasMineElement =
+        minesAlreadyPlaced < numMines && Math.random() > 0.5;
 
       element.origIndex = index;
       if (hasMineElement) {
@@ -319,7 +320,6 @@ const existsAndIsMine = (
 
   //exists but is false
   if (mineData[iRow][iCol] && !mineData[iRow][iCol].hasMine) {
-
     return false;
   }
 
@@ -328,7 +328,6 @@ const existsAndIsMine = (
     return true;
   }
 
-  console.log("returning false by default");
   return false;
 };
 
@@ -468,12 +467,7 @@ const getGridDataStructureFromGameConfig = (gameConfig: GameConfig) => {
  * @param state
  * @param dispatch
  */
-const getMineData = async (
-  iRow: number,
-  iCol: number,
-  state: GameState,
-  dispatch: React.Dispatch<GameActions>
-) => {
+const getMineData = async (iRow: number, iCol: number, state: GameState) => {
   const { rows, cols, mines } = getGameSize(state.gridSize);
 
   // let mineDataLocalOlde = placeMines(
@@ -485,31 +479,10 @@ const getMineData = async (
   //   iCol
   // );
 
-  let mineData = await placeMinesShuffled(
-    rows,
-    cols,
-    mines,
-    iRow,
-    iCol,
-    "getminedata.."
-  );
+  let mineData = await placeMinesShuffled(rows, cols, mines, iRow, iCol);
 
-  //  console.log('mineDataLocalOlde: ret', JSON.stringify( mineDataLocalOlde) );
-  //  console.log("mineDataLocal: after shuffle----------------", JSON.stringify(mineDataLocal));
   mineData = await placeNumAdjMineData(mineData);
-  //console.log("mineDataLocal: after placeNumAdjMineData----------------", JSON.stringify(mineDataLocal));
 
-  // dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineDataLocal });
-
-  // mineDataLocalOlde = placeNumAdjMineData(mineDataLocalOlde);
-  // console.log(
-  //   "mineDataLocalOlde: placeNumAdjMineDataplaceNumAdjMineDataplaceNumAdjMineData",
-  //   JSON.stringify(mineDataLocalOlde)
-  // );
-  console.log(
-    "mineDataLocal: after placeNumAdjMineData----------------",
-    JSON.stringify(mineData)
-  );
   return mineData;
 };
 
@@ -536,38 +509,6 @@ const isLoseCondition = (
  */
 const getGameSize = (gridSize: GameTypesKeys): GameConfig => {
   return GameSizes[gridSize];
-};
-
-const uncoverAdjacentZeroSqsRecursiveCallback = (
-  iRow: number,
-  iCol: number,
-  mineData: CellData[][]
-  // dispatch: React.Dispatch<GameActions>
-) => {
-  if (!existsCell(iRow, iCol, mineData)) {
-    console.error("cell at ", iRow, iCol, "does not exist");
-  }
-
-  let cell = mineData[iRow][iCol];
-
-  //why 4? i forget. todo rename...
-  const minSiblingMines = 4;
-
-  if (cell.numAdjMines < minSiblingMines) {
-    //dont hit already hit mines...
-    if (!cell.uncovered) {
-      //IMPORTANT increment state.uncovered cells~~~
-      cell.uncovered = true;
-
-      // dispatch({
-      //   type: GameActionType.INCREMENT_UNCOVER_CELL,
-      // });
-
-      //call neighborcells recursion!!---
-      uncoverAdjacentZeroSqs(iRow, iCol, mineData);
-      // uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
-    }
-  }
 };
 
 /**
@@ -736,8 +677,6 @@ const uncoverCell = (
   }
 
   mineData[iRow][iCol].uncovered = true;
-
-
   mineData[iRow][iCol].markedAs = "uncovered";
 
   let newlyUncoveredCells = uncoverAdjacentZeroSqs(iRow, iCol, mineData); //, dispatch);
@@ -746,7 +685,7 @@ const uncoverCell = (
   //get from recursion amount uncoverd and add current + previousl.
   dispatch({
     type: GameActionType.UPDATE_UNCOVER_CELL,
-    payload:numUncoveredLocal,
+    payload: numUncoveredLocal,
   });
 
   dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
@@ -785,13 +724,10 @@ const goTurn = (
   state: GameState,
   dispatch: React.Dispatch<GameActions>
 ) => {
-  console.log("go turn called");
   //already lost.
   if (state.isLost) {
     return;
   }
-
-  console.log("clicked row ", iRow, "col", iCol);
 
   //has bug resetting.
   uncoverCell(
@@ -855,8 +791,7 @@ const setCellMark = (
 };
 
 export {
-  // getGridDataStructure,
-  getGridDataStructureFromGameConfig,
+   getGridDataStructureFromGameConfig,
   getMineData,
   isMine,
   isLoseCondition,

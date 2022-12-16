@@ -34,7 +34,7 @@ const MineGrid = () => {
     let mineData = state.mineData;
     if (state.uncoveredCells === 0) {
       dispatch({ type: GameActionType.SET_START, payload: true });
-      mineData = await getMineData(iRow, iCol, state, dispatch);
+      mineData = await getMineData(iRow, iCol, state);
       dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
 
     }
