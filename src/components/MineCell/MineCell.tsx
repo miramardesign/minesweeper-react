@@ -32,10 +32,6 @@ const MineCell = ({
     rightClick(iRow, iCol);
   };
 
-  useEffect( () => {
-    console.log('cell not showing???', cell);
-  }, [cell])
-
   return (
     <button
       className={`

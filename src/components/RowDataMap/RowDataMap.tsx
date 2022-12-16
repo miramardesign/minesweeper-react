@@ -18,10 +18,6 @@ const RowDataMap = ({
   rightClick,
 }: RowDataMapProps) => {
 
-  useEffect( () => {
-    console.log('row not showing???', row);
-  }, [row])
-
 
   return (
     <div key={iRow}>

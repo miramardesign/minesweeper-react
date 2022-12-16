@@ -150,7 +150,7 @@ const placeMinesShuffled = (
     .fill([])
     .map((element, index) => {
       const hasMineElement =
-        minesAlreadyPlaced < numMines && Math.random() > 0.5;
+        minesAlreadyPlaced < numMines; // && Math.random() > 0.2;
 
       element.origIndex = index;
       if (hasMineElement) {
@@ -182,12 +182,24 @@ const placeMinesShuffled = (
 
   if (mineDataLocalOneDim[initialCellOneDim].hasMine) {
     console.error("user clicked on mine initally; move it!");
+   // for(let i = 1; i < mineDataLocalOneDim.length ; i++){
+    let i = 0;
+    while( i < mineDataLocalOneDim.length){
+      i++;
+
+      //do modulus to spin aroun the grid?
+      let curCellI = mineDataLocalOneDim.length % (initialCellOneDim + i) 
+      let curCell = mineDataLocalOneDim[curCellI];
+      if(!curCell.hasMine){
+        curCell.hasMine = true;
+        break;
+      }
+    }
+    mineDataLocalOneDim[initialCellOneDim].hasMine = false;
   }
 
   let mineData = singleArrayToMultiArray(mineDataLocalOneDim, numCols);
-
-  console.log("mineDataLocalOneDim after shuffle", mineDataLocalOneDim);
-  console.log("mineDataFilled after shuffle", mineData);
+ 
   return mineData;
 };
 
@@ -207,25 +219,20 @@ const singleArrayToMultiArray = (bigArray: any[], numCols: number): any[][] => {
 };
 
 /**
- * put the adjacent mine date in the mine data.
+ * put the adjacent mine date in the mine data 
+ * and return it to caller.
  * @param mineData
  */
 const placeNumAdjMineData = async (
   mineData: CellData[][]
   // dispatch: React.Dispatch<GameActions>
 ) => {
-  // console.log(
-  //   "placeNumAdjMineData mineData lenght:",
-  //   mineData.length,
-  //   "first row lenght",
-  //   mineData[0].length
-  // );
+ 
   await mineData.map((row, iRow) => {
     //console.log("rowwwwwwwwwwwwwwwwww", row);
 
     row.map(async (cell, iCol) => {
-      // console.log('colllllllllllllll', cell);
-      cell.numAdjMines = 0;
+       cell.numAdjMines = 0;
       await loopAdjCells(
         iRow,
         iCol,
@@ -237,16 +244,9 @@ const placeNumAdjMineData = async (
           mineData: CellData[][]
           // dispatch
         ) => {
-          if (existsAndIsMine(iRow, iCol, mineData)) {
-            console.log(
-              "numAdjMinesnumAdjMinesnumAdjMinesnumAdjMinesnumAdjMinesnumAdjMines",
-              cell.numAdjMines
-            );
-
+          if (existsAndIsMine(iRow, iCol, mineData)) { 
             cell.numAdjMines++;
-          } else {
-            console.log("not mine", iRow, iCol);
-          }
+          } 
         }
       );
     });
@@ -380,6 +380,14 @@ const loopAdjCells = (
   });
 };
 
+/**
+ * checks if a cell row col are in bounds
+ * @param iRow 
+ * @param iCol 
+ * @param numRows 
+ * @param numCols 
+ * @returns boolean
+ */
 const bothInBounds = (
   iRow: number,
   iCol: number,
@@ -425,13 +433,7 @@ const getPerimeterCells = (
       };
     }
   }
-
-  // console.log(
-  //   "perimeter cells of ",
-  //   [iRow, iCol],
-  //   perimeterCellsDynamic,
-  //   "---"
-  // );
+ 
 
   return perimeterCellsDynamic;
 };

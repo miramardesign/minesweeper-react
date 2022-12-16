@@ -4,7 +4,7 @@ export const GameSizes: GameTypes = {
     test:  {
       rows: 5,
       cols: 5,
-      mines: 5,
+      mines: 20,
     },
     beginner:  {
       rows: 8,
