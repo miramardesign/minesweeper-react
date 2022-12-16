@@ -44,7 +44,7 @@ type EndGameAction = {
   payload: boolean;
 };
 
-type UncoverCellAction = {
+type UpdateUncoverCellAction = {
   type: GameActionType.UPDATE_UNCOVER_CELL;
   payload: number;
 };
@@ -97,7 +97,7 @@ export type GameActions =
   | ToggleLostAction
   | StartGameAction
   | EndGameAction
-  | UncoverCellAction
+  | UpdateUncoverCellAction
   | ChangeGameStateDisplay
   | IncrementUncoverCellAction
   | SetUncoverCellAction

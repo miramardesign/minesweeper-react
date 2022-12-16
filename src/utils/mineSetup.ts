@@ -149,19 +149,12 @@ const placeMinesShuffled = (
   let mineDataLocalOneDim: CellData[] = new Array(numRows * numCols)
     .fill([])
     .map((element, index) => {
-      const hasMineElement = minesAlreadyPlaced < numMines; // && Math.random() > mineChance;
-      console.log("mapping index", index, "hasMineElemnt", hasMineElement);
-      // element.markedAs = "";
-      // element.hasMine = false;
-      // element.uncovered = false;
-      // element.numAdjMines = 6;
+      const hasMineElement = minesAlreadyPlaced < numMines && Math.random() > 0.5;
 
       element.origIndex = index;
       if (hasMineElement) {
         minesAlreadyPlaced++;
-        ///  element.hasMine = true;
       }
-      // return element;
 
       return {
         hasMine: hasMineElement,
@@ -326,8 +319,6 @@ const existsAndIsMine = (
 
   //exists but is false
   if (mineData[iRow][iCol] && !mineData[iRow][iCol].hasMine) {
-    console.log("exists but is false");
-    console.log(mineData[iRow][iCol], "-------------");
 
     return false;
   }

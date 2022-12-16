@@ -82,11 +82,7 @@ const reducer = (state: GameState, action: GameActions): GameState => {
         ...state,
         uncoveredCells: state.uncoveredCells + 1,
       };
-    case GameActionType.SET_UNCOVER_CELL:
-      return {
-        ...state,
-        uncoveredCells: action.payload,
-      };
+ 
     case GameActionType.INCREMENT_FLAGS_PLACED:
       return {
         ...state,
