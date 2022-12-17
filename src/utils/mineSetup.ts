@@ -86,6 +86,10 @@ const placeMines = (
   return mineData;
 };
 
+const getRandIndex = (array: any[]) => {
+  return Math.floor(Math.random() * array.length);
+};
+
 /**
  * instead of randomly placing mines, place the mines in order, and shuffle.
  * fischer-yates. https://dev.to/codebubb/how-to-shuffle-an-array-in-javascript-2ikj
@@ -119,6 +123,134 @@ const getInitialCellIndexOneDim = (
   return initialCellOneDim;
 };
 
+const getNotHasMineIndexList = (mineDataLocalOneDim: any[]) : number[] => {
+  let notHasMineList: number[] = [];
+  mineDataLocalOneDim.map( (value, index) => {
+
+    if(!value.hasMine){
+      notHasMineList.push(index);
+    }
+
+  });
+  return notHasMineList;
+}
+
+/** depping , was buggy. */
+const swapLoopFromStartI = (
+  mineDataLocalOneDim: CellData[],
+  startI: number,
+  offset: number,
+  isPosDir: boolean,
+  initialCellOneDim: number
+): CellData[] => {
+  while (startI >= 0 && startI < mineDataLocalOneDim.length - 1) {
+    //increments or decrements by adding +1 or -1
+    startI = startI + offset;
+
+    //hit the bounds by starting at 0
+    if (startI > mineDataLocalOneDim.length || startI < 0) {
+      break;
+    }
+
+    let curCell = mineDataLocalOneDim[startI];
+
+    console.info(
+      "loooking at startI",
+      startI,
+      "isPosDir",
+      isPosDir,
+      "---------------"
+    );
+    if (!curCell) {
+      console.error(
+        "cell not existing bug index was",
+        startI,
+        "mineDataLocalOneDim.length",
+        mineDataLocalOneDim.length,
+        "isPosDir",
+        isPosDir
+      );
+    }
+    if (!curCell.hasMine) {
+      console.info("found the non mine!!", startI);
+      curCell.hasMine = true;
+      mineDataLocalOneDim[initialCellOneDim].hasMine = false;
+      break;
+    }
+
+    startI = startI + offset;
+  }
+  return mineDataLocalOneDim;
+};
+
+/**
+ * if the current node has mine find a random one that doesnt and trade them.
+ * do this by selecting a random node, and going in a random direction either forward or backward until a negative is found.
+ *
+ * @param mineDataLocalOneDim
+ * @param curI
+ */
+const swapHasMineRand = (
+  mineDataLocalOneDim: CellData[],
+  initialCellOneDim: number
+): CellData[] => {
+  let isPosDir = Math.random() > 0.5;
+  let startI = getRandIndex(mineDataLocalOneDim);
+
+  //get a list of indexes without mines.
+  const notHasMineIndexList = getNotHasMineIndexList(mineDataLocalOneDim);
+  console.log(notHasMineIndexList, '---------nothasminelist---------');
+
+  //get a random one of thse by its index. 
+  const notHasMineRandIndex = getRandIndex(notHasMineIndexList);
+
+  //get its value which is an index in the other array. 
+  const randCellNotHasMineIndex = notHasMineIndexList[notHasMineRandIndex];
+
+  //swap theri values. done.
+  mineDataLocalOneDim[randCellNotHasMineIndex].hasMine = true;
+  mineDataLocalOneDim[initialCellOneDim].hasMine = false;
+
+
+  // let offset = isPosDir ? 1 : -1;
+
+  // console.log("isPosDir", isPosDir, "startI", startI);
+
+  // mineDataLocalOneDim = swapLoopFromStartI(
+  //   mineDataLocalOneDim,
+  //   startI,
+  //   offset,
+  //   isPosDir,
+  //   initialCellOneDim
+  // );
+
+  // //handle the case where they still didnt remove the mine, start from the same place and go the other way?
+  // if (mineDataLocalOneDim[initialCellOneDim].hasMine) {
+  //   console.error(
+  //     "stille has mine index, now going other way, cuz why not?, ",
+  //     initialCellOneDim
+  //   );
+
+  //   //reset and go the other way.
+  //   isPosDir = !isPosDir;
+  //   offset = isPosDir ? 1 : -1;
+  //   //throw "still has mine";
+  //   mineDataLocalOneDim = swapLoopFromStartI(
+  //     mineDataLocalOneDim,
+  //     startI,
+  //     offset,
+  //     isPosDir,
+  //     initialCellOneDim
+  //   );
+  //   console.log(
+  //     "after 2nd time",
+  //     mineDataLocalOneDim[initialCellOneDim].hasMine
+  //   );
+  // }
+
+  return mineDataLocalOneDim;
+};
+
 //i thinhk this only moves mines one or two over, so if they
 //neighbor swapping.
 //are previously bunched up, then they will still be pretty grouped.
@@ -149,8 +281,7 @@ const placeMinesShuffled = (
   let mineDataLocalOneDim: CellData[] = new Array(numRows * numCols)
     .fill([])
     .map((element, index) => {
-      const hasMineElement =
-        minesAlreadyPlaced < numMines; // && Math.random() > 0.2;
+      const hasMineElement = minesAlreadyPlaced < numMines; // && Math.random() > 0.2;
 
       element.origIndex = index;
       if (hasMineElement) {
@@ -182,24 +313,30 @@ const placeMinesShuffled = (
 
   if (mineDataLocalOneDim[initialCellOneDim].hasMine) {
     console.error("user clicked on mine initally; move it!");
-   // for(let i = 1; i < mineDataLocalOneDim.length ; i++){
-    let i = 0;
-    while( i < mineDataLocalOneDim.length){
-      i++;
 
-      //do modulus to spin aroun the grid?
-      let curCellI = mineDataLocalOneDim.length % (initialCellOneDim + i) 
-      let curCell = mineDataLocalOneDim[curCellI];
-      if(!curCell.hasMine){
-        curCell.hasMine = true;
-        break;
-      }
-    }
-    mineDataLocalOneDim[initialCellOneDim].hasMine = false;
+    mineDataLocalOneDim = swapHasMineRand(
+      mineDataLocalOneDim,
+      initialCellOneDim
+    );
+
+    //   //swap a random cell.
+    //   let destI = getRandIndex(mineDataLocalOneDim);
+
+    //   console.log('b4 loop?, desti', destI);
+
+    //   while( mineDataLocalOneDim[destI].hasMine){
+    //     console.log('looped?, desti', destI);
+    //     destI = getRandIndex(mineDataLocalOneDim);
+    //     const tempNode = mineDataLocalOneDim[initialCellOneDim];
+    //     mineDataLocalOneDim[initialCellOneDim] = mineDataLocalOneDim[destI];
+    //     mineDataLocalOneDim[destI] = tempNode;
+    //   }
+
+    // mineDataLocalOneDim[initialCellOneDim].hasMine = false;
   }
 
   let mineData = singleArrayToMultiArray(mineDataLocalOneDim, numCols);
- 
+
   return mineData;
 };
 
@@ -219,7 +356,7 @@ const singleArrayToMultiArray = (bigArray: any[], numCols: number): any[][] => {
 };
 
 /**
- * put the adjacent mine date in the mine data 
+ * put the adjacent mine date in the mine data
  * and return it to caller.
  * @param mineData
  */
@@ -227,12 +364,11 @@ const placeNumAdjMineData = async (
   mineData: CellData[][]
   // dispatch: React.Dispatch<GameActions>
 ) => {
- 
   await mineData.map((row, iRow) => {
     //console.log("rowwwwwwwwwwwwwwwwww", row);
 
     row.map(async (cell, iCol) => {
-       cell.numAdjMines = 0;
+      cell.numAdjMines = 0;
       await loopAdjCells(
         iRow,
         iCol,
@@ -244,9 +380,9 @@ const placeNumAdjMineData = async (
           mineData: CellData[][]
           // dispatch
         ) => {
-          if (existsAndIsMine(iRow, iCol, mineData)) { 
+          if (existsAndIsMine(iRow, iCol, mineData)) {
             cell.numAdjMines++;
-          } 
+          }
         }
       );
     });
@@ -382,10 +518,10 @@ const loopAdjCells = (
 
 /**
  * checks if a cell row col are in bounds
- * @param iRow 
- * @param iCol 
- * @param numRows 
- * @param numCols 
+ * @param iRow
+ * @param iCol
+ * @param numRows
+ * @param numCols
  * @returns boolean
  */
 const bothInBounds = (
@@ -433,7 +569,6 @@ const getPerimeterCells = (
       };
     }
   }
- 
 
   return perimeterCellsDynamic;
 };
@@ -793,7 +928,7 @@ const setCellMark = (
 };
 
 export {
-   getGridDataStructureFromGameConfig,
+  getGridDataStructureFromGameConfig,
   getMineData,
   isMine,
   isLoseCondition,
