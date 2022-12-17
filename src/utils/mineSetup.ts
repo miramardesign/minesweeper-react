@@ -22,7 +22,6 @@ const getRandPosInt = (max: number) => {
  * @returns
  */
 const existsCell = (iRow: number, iCol: number, mineData: CellData[][]) => {
-  // console.log('existscelllllllllllllll', iRow);
   //row doesnt exist
   if (mineData[iRow] === undefined) {
     return false;
@@ -37,6 +36,7 @@ const existsCell = (iRow: number, iCol: number, mineData: CellData[][]) => {
 };
 
 /**
+ * deppping to other shuffle version.
  * place mines, in rand col and row, being careful to dedupe such that
  * the num of mines is the prescribed number
  * @param mineData
@@ -68,13 +68,7 @@ const placeMines = (
 
       //choose other celll.
       if (cell.hasMine || isInitialCell) {
-        const randDirPos: boolean = (getRandPosInt(1) ? 0 : 1) === 1;
-        console.log(randDirPos, "randdirPositvie");
-        const newColRand = getRandPosInt(numCols);
-
-        console.log(
-          "mine collision, just jump another random num of spaces and loop until you find an empty space?"
-        );
+ 
       } else {
         cell.hasMine = true;
 
@@ -135,58 +129,9 @@ const getNotHasMineIndexList = (mineDataLocalOneDim: any[]) : number[] => {
   return notHasMineList;
 }
 
-/** depping , was buggy. */
-const swapLoopFromStartI = (
-  mineDataLocalOneDim: CellData[],
-  startI: number,
-  offset: number,
-  isPosDir: boolean,
-  initialCellOneDim: number
-): CellData[] => {
-  while (startI >= 0 && startI < mineDataLocalOneDim.length - 1) {
-    //increments or decrements by adding +1 or -1
-    startI = startI + offset;
-
-    //hit the bounds by starting at 0
-    if (startI > mineDataLocalOneDim.length || startI < 0) {
-      break;
-    }
-
-    let curCell = mineDataLocalOneDim[startI];
-
-    console.info(
-      "loooking at startI",
-      startI,
-      "isPosDir",
-      isPosDir,
-      "---------------"
-    );
-    if (!curCell) {
-      console.error(
-        "cell not existing bug index was",
-        startI,
-        "mineDataLocalOneDim.length",
-        mineDataLocalOneDim.length,
-        "isPosDir",
-        isPosDir
-      );
-    }
-    if (!curCell.hasMine) {
-      console.info("found the non mine!!", startI);
-      curCell.hasMine = true;
-      mineDataLocalOneDim[initialCellOneDim].hasMine = false;
-      break;
-    }
-
-    startI = startI + offset;
-  }
-  return mineDataLocalOneDim;
-};
-
 /**
  * if the current node has mine find a random one that doesnt and trade them.
- * do this by selecting a random node, and going in a random direction either forward or backward until a negative is found.
- *
+ * do this by selecting a random node from a list of candidates.
  * @param mineDataLocalOneDim
  * @param curI
  */
@@ -194,12 +139,10 @@ const swapHasMineRand = (
   mineDataLocalOneDim: CellData[],
   initialCellOneDim: number
 ): CellData[] => {
-  let isPosDir = Math.random() > 0.5;
-  let startI = getRandIndex(mineDataLocalOneDim);
 
   //get a list of indexes without mines.
   const notHasMineIndexList = getNotHasMineIndexList(mineDataLocalOneDim);
-  console.log(notHasMineIndexList, '---------nothasminelist---------');
+  console.info(notHasMineIndexList, '---------nothasminelist---------');
 
   //get a random one of thse by its index. 
   const notHasMineRandIndex = getRandIndex(notHasMineIndexList);
@@ -211,50 +154,9 @@ const swapHasMineRand = (
   mineDataLocalOneDim[randCellNotHasMineIndex].hasMine = true;
   mineDataLocalOneDim[initialCellOneDim].hasMine = false;
 
-
-  // let offset = isPosDir ? 1 : -1;
-
-  // console.log("isPosDir", isPosDir, "startI", startI);
-
-  // mineDataLocalOneDim = swapLoopFromStartI(
-  //   mineDataLocalOneDim,
-  //   startI,
-  //   offset,
-  //   isPosDir,
-  //   initialCellOneDim
-  // );
-
-  // //handle the case where they still didnt remove the mine, start from the same place and go the other way?
-  // if (mineDataLocalOneDim[initialCellOneDim].hasMine) {
-  //   console.error(
-  //     "stille has mine index, now going other way, cuz why not?, ",
-  //     initialCellOneDim
-  //   );
-
-  //   //reset and go the other way.
-  //   isPosDir = !isPosDir;
-  //   offset = isPosDir ? 1 : -1;
-  //   //throw "still has mine";
-  //   mineDataLocalOneDim = swapLoopFromStartI(
-  //     mineDataLocalOneDim,
-  //     startI,
-  //     offset,
-  //     isPosDir,
-  //     initialCellOneDim
-  //   );
-  //   console.log(
-  //     "after 2nd time",
-  //     mineDataLocalOneDim[initialCellOneDim].hasMine
-  //   );
-  // }
-
   return mineDataLocalOneDim;
 };
 
-//i thinhk this only moves mines one or two over, so if they
-//neighbor swapping.
-//are previously bunched up, then they will still be pretty grouped.
-const shuffleSort = (a: any, b: any) => Math.random() - 0.5;
 
 /**
  * place mines in single dimensional array using a random chance
@@ -319,20 +221,6 @@ const placeMinesShuffled = (
       initialCellOneDim
     );
 
-    //   //swap a random cell.
-    //   let destI = getRandIndex(mineDataLocalOneDim);
-
-    //   console.log('b4 loop?, desti', destI);
-
-    //   while( mineDataLocalOneDim[destI].hasMine){
-    //     console.log('looped?, desti', destI);
-    //     destI = getRandIndex(mineDataLocalOneDim);
-    //     const tempNode = mineDataLocalOneDim[initialCellOneDim];
-    //     mineDataLocalOneDim[initialCellOneDim] = mineDataLocalOneDim[destI];
-    //     mineDataLocalOneDim[destI] = tempNode;
-    //   }
-
-    // mineDataLocalOneDim[initialCellOneDim].hasMine = false;
   }
 
   let mineData = singleArrayToMultiArray(mineDataLocalOneDim, numCols);
@@ -342,6 +230,7 @@ const placeMinesShuffled = (
 
 /**
  * go from 1 dim to 2 dimensions, with a prescribe number of cols in a row
+ * [1, 2, 3, 4] -> [[1, 2,], [3, 4]] with 2 cols per row
  * @param bigArray
  * @param numCols
  * @returns
@@ -580,7 +469,6 @@ const getPerimeterCells = (
  */
 const getGridDataStructureFromGameConfig = (gameConfig: GameConfig) => {
   const { rows, cols } = gameConfig;
-  //return getGridDataStructure(rows, cols, mines);
 
   let mineData = new Array(rows).fill([]).map(() => {
     return new Array(cols).fill({}).map((element: CellData) => {
@@ -606,15 +494,6 @@ const getGridDataStructureFromGameConfig = (gameConfig: GameConfig) => {
  */
 const getMineData = async (iRow: number, iCol: number, state: GameState) => {
   const { rows, cols, mines } = getGameSize(state.gridSize);
-
-  // let mineDataLocalOlde = placeMines(
-  //   state.mineData,
-  //   rows,
-  //   cols,
-  //   mines,
-  //   iRow,
-  //   iCol
-  // );
 
   let mineData = await placeMinesShuffled(rows, cols, mines, iRow, iCol);
 
@@ -674,7 +553,6 @@ const uncoverAdjacentZeroSqs = (
         iRow: number,
         iCol: number,
         mineData: CellData[][]
-        // dispatch: React.Dispatch<GameActions>
       ) => {
         if (!existsCell(iRow, iCol, mineData)) {
           console.error("cell at ", iRow, iCol, "does not exist");
@@ -691,14 +569,10 @@ const uncoverAdjacentZeroSqs = (
             //IMPORTANT increment state.uncovered cells~~~
             cell.uncovered = true;
 
-            // dispatch({
-            //   type: GameActionType.INCREMENT_UNCOVER_CELL,
-            // });
             newlyUncoveredCells++;
 
             //call neighborcells recursion!!---
             newlyUncoveredCells += uncoverAdjacentZeroSqs(iRow, iCol, mineData);
-            // uncoverAdjacentZeroSqs(iRow, iCol, mineData, dispatch);
           }
         }
       }
@@ -932,7 +806,6 @@ export {
   getMineData,
   isMine,
   isLoseCondition,
-  // placeMines,
   placeNumAdjMineData,
   placeCellMark,
   existsCell,

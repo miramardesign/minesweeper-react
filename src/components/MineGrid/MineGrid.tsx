@@ -79,7 +79,9 @@ const MineGrid = () => {
     resetGrid(dispatch, localState);
   };
 
-  /** gridSize dropdown changes, */
+  /** gridSize dropdown changes,
+   * change size and reset of cou rse
+   */
   const handleOnChangeSize = (gridSize: GameTypesKeys) => {
     console.log("size changed", gridSize);
     console.log("gridsized changed.........to....", gridSize);
@@ -90,12 +92,12 @@ const MineGrid = () => {
   return (
 
     <section>
-      ==================================================================
+      {/* ==================================================================
       minedata new broke, wont put adjacent data{JSON.stringify(state.mineData)}
       <br />
       ====================================================
      unconvered cells {state.uncoveredCells}
-     
+      */}
      {/* minedata olde, ineffecting placing mech.  {JSON.stringify(state.mineDataOlde)} */}
 
       <GameSizeChooser chooseGameSize={handleOnChangeSize} />
