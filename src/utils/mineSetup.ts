@@ -681,6 +681,11 @@ const uncoverCell = (
     onLoseCondition(iRow, iCol, mineData, dispatch);
     return;
   }
+  
+  dispatch({
+    type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
+    payload: GameStateDisplay.PLAY,
+  });
 
   //if already uncovered
   if (mineData[iRow][iCol].uncovered) {
@@ -735,10 +740,7 @@ const goTurn = (
   state: GameState,
   dispatch: React.Dispatch<GameActions>
 ) => {
-  //already lost.
-  if (state.isLost) {
-    return;
-  }
+
 
   //has bug resetting.
   uncoverCell(
@@ -765,7 +767,6 @@ const setCellMark = (
   mineData: CellData[][],
   dispatch: React.Dispatch<GameActions>
 ): void => {
-  console.log("right click olde?????????????", iRow, iCol);
 
   const cell = mineData[iRow][iCol];
 

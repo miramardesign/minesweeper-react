@@ -1,17 +1,13 @@
 import React, { useContext } from "react";
 import styles from "./MineGrid.module.scss";
 import {
- 
   getMineData,
   goTurn,
   onLoseCondition,
   resetGrid,
   setCellMark,
 } from "../../utils/mineSetup";
-import {
-  GameStateDisplay,
-  GameTypesKeys,
-} from "../../types/mineTypes";
+import { GameStateDisplay, GameTypesKeys } from "../../types/mineTypes";
 import { GameSizes } from "../../utils/mineSetupData";
 import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
 import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountup";
@@ -30,21 +26,29 @@ const MineGrid = () => {
    * @param iCol
    */
   const handleLeftClick = async (iRow: number, iCol: number) => {
+    console.log("mouseUP");
+
+    //already lost.
+    if (state.isLost) {
+      return;
+    }
 
     let mineData = state.mineData;
     if (state.uncoveredCells === 0) {
       dispatch({ type: GameActionType.SET_START, payload: true });
       mineData = await getMineData(iRow, iCol, state);
       dispatch({ type: GameActionType.SET_MINE_DATA, payload: mineData });
-
     }
     goTurn(iRow, iCol, mineData, state, dispatch);
+
+
   };
 
   /**
    * just changes display :) :() :( Gamestatedisplay.
    */
   const handleLeftOnMouseDown = () => {
+    console.log("mouse down");
     dispatch({
       type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
       payload: GameStateDisplay.DANGER,
@@ -90,7 +94,6 @@ const MineGrid = () => {
   };
 
   return (
-
     <section>
       {/* ==================================================================
       minedata new broke, wont put adjacent data{JSON.stringify(state.mineData)}
@@ -98,7 +101,7 @@ const MineGrid = () => {
       ====================================================
      unconvered cells {state.uncoveredCells}
       */}
-     {/* minedata olde, ineffecting placing mech.  {JSON.stringify(state.mineDataOlde)} */}
+      {/* minedata olde, ineffecting placing mech.  {JSON.stringify(state.mineDataOlde)} */}
 
       <GameSizeChooser chooseGameSize={handleOnChangeSize} />
       <article id="wrap-row-digital-display-reset">
