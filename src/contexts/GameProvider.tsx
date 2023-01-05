@@ -1,11 +1,21 @@
-import React, {cloneElement, createContext, PropsWithChildren, useReducer } from "react";
-import {  GameStateDisplay, GameTypes } from "../types/mineTypes";
+import React, {
+  cloneElement,
+  createContext,
+  PropsWithChildren,
+  useReducer,
+} from "react";
+import { GameStateDisplay, GameTypes } from "../types/mineTypes";
 import { GameActions, GameActionType, GameState } from "../types/state";
-import { getGameSize, getGridDataStructureFromGameConfig } from "../utils/mineSetup";
+import {
+  getGameSize,
+  getGridDataStructureFromGameConfig,
+} from "../utils/mineSetup";
 
 export const gridSizeSeparate: keyof GameTypes = "test";
 
-export const emptyMineDataStructure = getGridDataStructureFromGameConfig(getGameSize(gridSizeSeparate));
+export const emptyMineDataStructure = getGridDataStructureFromGameConfig(
+  getGameSize(gridSizeSeparate)
+);
 
 export const initialState: GameState = {
   isLost: false,
@@ -15,10 +25,7 @@ export const initialState: GameState = {
   flagsPlaced: 0,
   gameStateDisplay: GameStateDisplay.UNSTARTED,
   gridSize: gridSizeSeparate,
- // gridSize: "beginner", 
- 
- mineData: emptyMineDataStructure,
- mineDataOlde:  JSON.parse(JSON.stringify(emptyMineDataStructure)),
+  mineData: emptyMineDataStructure,
 };
 
 export const GameContext = createContext<{
@@ -30,7 +37,7 @@ export const GameContext = createContext<{
 });
 
 export const GameProvider = ({ children }: PropsWithChildren) => {
-  const [state, dispatch] = useReducer(reducer, initialState, initReducer);
+  const [state, dispatch] = useReducer(gameReducer, initialState, initGameReducer);
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>
@@ -42,20 +49,20 @@ export const GameProvider = ({ children }: PropsWithChildren) => {
 // https://reactjs.org/docs/hooks-reference.html#lazy-initialization
 /**
  * reset the game state...
- * @param initialState
+ * @param initialGameState
  * @returns
  */
-const initReducer = (initialState: GameState) => {
-  return initialState;
+const initGameReducer = (initialGameState: GameState) => {
+  return initialGameState;
 };
 
-const reducer = (state: GameState, action: GameActions): GameState => {
+const gameReducer = (state: GameState, action: GameActions): GameState => {
   switch (action.type) {
     case GameActionType.TOGGLE_LOST:
       return {
         ...state,
         isLost: !state.isLost,
-        gameStateDisplay: GameStateDisplay.LOSE
+        gameStateDisplay: GameStateDisplay.LOSE,
       };
     case GameActionType.SET_START:
       return {
@@ -66,7 +73,7 @@ const reducer = (state: GameState, action: GameActions): GameState => {
       return {
         ...state,
         isGameOver: action.payload,
-      };  
+      };
     case GameActionType.UPDATE_UNCOVER_CELL:
       return {
         ...state,
@@ -82,7 +89,6 @@ const reducer = (state: GameState, action: GameActions): GameState => {
         ...state,
         uncoveredCells: state.uncoveredCells + 1,
       };
- 
     case GameActionType.INCREMENT_FLAGS_PLACED:
       return {
         ...state,
@@ -103,13 +109,8 @@ const reducer = (state: GameState, action: GameActions): GameState => {
         ...state,
         mineData: action.payload,
       };
-    case GameActionType.SET_MINE_DATA_OLDE:
-      return {
-        ...state,
-        mineDataOlde: action.payload,
-      };
     case GameActionType.RESET_GAME:
-      return initReducer(action.payload);
+      return initGameReducer(action.payload);
     default:
       console.error("Action not implemented", action);
       throw new Error();

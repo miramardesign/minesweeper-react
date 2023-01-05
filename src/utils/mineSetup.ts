@@ -490,7 +490,6 @@ const getGridDataStructureFromGameConfig = (gameConfig: GameConfig) => {
  * @param iRow row they clicked, i need this to avoid clicking the mine on 1st click
  * @param iCol col ...
  * @param state
- * @param dispatch
  */
 const getMineData = async (iRow: number, iCol: number, state: GameState) => {
   const { rows, cols, mines } = getGameSize(state.gridSize);
@@ -540,7 +539,6 @@ const uncoverAdjacentZeroSqs = (
   iRow: number,
   iCol: number,
   mineData: CellData[][]
-  // dispatch: React.Dispatch<GameActions>
 ) => {
   let newlyUncoveredCells = 0;
   if (mineData[iRow][iCol].numAdjMines === 0) {
@@ -548,7 +546,6 @@ const uncoverAdjacentZeroSqs = (
       iRow,
       iCol,
       mineData,
-      // dispatch,
       (
         iRow: number,
         iCol: number,

@@ -5,11 +5,10 @@ export type GameState = {
   isGameOver: boolean;
   isGameStarted: boolean;
   uncoveredCells: number;
-  flagsPlaced: number
+  flagsPlaced: number;
   gridSize: GameTypesKeys;
   gameStateDisplay: GameStateDisplay;
   mineData: CellData[][];
-  mineDataOlde: CellData[][];
 };
 
 export enum GameActionType {
@@ -25,18 +24,15 @@ export enum GameActionType {
   CHOOSE_SIZE = "CHOOSE_SIZE",
   RESET_GAME = "RESET_GAME",
   SET_MINE_DATA = "SET_MINE_DATA",
-  SET_MINE_DATA_OLDE = "SET_MINE_DATA_OLDE",
 }
 
 type ToggleLostAction = {
   type: GameActionType.TOGGLE_LOST;
-  //no payload necessary as is bool
 };
 
 type StartGameAction = {
   type: GameActionType.SET_START;
   payload: boolean;
-
 };
 
 type EndGameAction = {
@@ -61,14 +57,13 @@ type IncrementUncoverCellAction = {
 type SetUncoverCellAction = {
   type: GameActionType.SET_UNCOVER_CELL;
   payload: number;
-
 };
 
-type IncrementFlagsPlaced = {
+type IncrementFlagsPlacedAction = {
   type: GameActionType.INCREMENT_FLAGS_PLACED;
 };
 
-type DecrementFlagsPlaced = {
+type DecrementFlagsPlacedAction = {
   type: GameActionType.DECREMENT_FLAGS_PLACED;
 };
 
@@ -87,12 +82,6 @@ type GetMineDataAction = {
   payload: CellData[][];
 };
 
-type GetMineDataOldeAction = {
-  type: GameActionType.SET_MINE_DATA_OLDE;
-  payload: CellData[][];
-};
-
-
 export type GameActions =
   | ToggleLostAction
   | StartGameAction
@@ -101,10 +90,8 @@ export type GameActions =
   | ChangeGameStateDisplay
   | IncrementUncoverCellAction
   | SetUncoverCellAction
-  | IncrementFlagsPlaced
-  | DecrementFlagsPlaced
+  | IncrementFlagsPlacedAction
+  | DecrementFlagsPlacedAction
   | ChooseGridSizeAction
   | ResetGameAction
-  | GetMineDataAction
-  | GetMineDataOldeAction;
-
+  | GetMineDataAction;
