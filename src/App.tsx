@@ -3,7 +3,7 @@ import MineGrid from "./components/MineGrid/MineGrid";
 import SudokuBoard from "./components/SudokuBoard/SudokuBoard";
 import { GameProvider } from "./contexts/GameProvider";
 import { GameTypesKeys } from "./types/mineTypes";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SudokuDifficulty } from "./utils/sudokuSetup";
 
 type GameChoice = "launcher" | "minesweeper" | "sudoku";
@@ -46,11 +46,17 @@ function App() {
   const [selectedSudokuDifficulty, setSelectedSudokuDifficulty] =
     useState<SudokuDifficulty>("easy");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isBackConfirmOpen, setIsBackConfirmOpen] = useState(false);
 
   useEffect(() => {
     setElapsedSeconds(0);
+    setIsTimerRunning(selectedGame !== "launcher");
+    setIsBackConfirmOpen(false);
+  }, [selectedGame]);
 
-    if (selectedGame === "launcher") {
+  useEffect(() => {
+    if (selectedGame === "launcher" || !isTimerRunning) {
       return;
     }
 
@@ -59,7 +65,25 @@ function App() {
     }, 1000);
 
     return () => window.clearInterval(timerId);
-  }, [selectedGame]);
+  }, [isTimerRunning, selectedGame]);
+
+  const handleGameEnd = useCallback((result: "win" | "lose") => {
+    setIsTimerRunning(false);
+
+    if (result === "lose") {
+      setElapsedSeconds(0);
+    }
+  }, []);
+
+  const handleGameRestart = useCallback(() => {
+    setElapsedSeconds(0);
+    setIsTimerRunning(true);
+  }, []);
+
+  const handleConfirmBack = () => {
+    setIsBackConfirmOpen(false);
+    setSelectedGame("launcher");
+  };
 
   const selectedGameTitle =
     gameOptions.find((game) => game.id === selectedGame)?.title ?? "";
@@ -76,11 +100,12 @@ function App() {
     return (
       <header className="game-header">
         <button
-          className="basic header-back-button"
-          onClick={() => setSelectedGame("launcher")}
+          aria-label="Back to game chooser"
+          className="header-back-button"
+          onClick={() => setIsBackConfirmOpen(true)}
           type="button"
         >
-          {"<<Back"}
+          {"\u2039"}
         </button>
         <h1>{selectedGameTitle}</h1>
         <span className="header-timer" aria-label="Elapsed game time">
@@ -94,7 +119,10 @@ function App() {
     if (selectedGame === "minesweeper") {
       return (
         <GameProvider initialGridSize={selectedMinesweeperType}>
-          <MineGrid />
+          <MineGrid
+            onGameEnd={handleGameEnd}
+            onGameRestart={handleGameRestart}
+          />
         </GameProvider>
       );
     }
@@ -102,7 +130,11 @@ function App() {
     if (selectedGame === "sudoku") {
       return (
         <section className="placeholder-page" aria-label="Sudoku">
-          <SudokuBoard difficulty={selectedSudokuDifficulty} />
+          <SudokuBoard
+            difficulty={selectedSudokuDifficulty}
+            onGameEnd={handleGameEnd}
+            onGameRestart={handleGameRestart}
+          />
         </section>
       );
     }
@@ -153,6 +185,35 @@ function App() {
     <div className="App">
       {renderGameHeader()}
       {renderGame()}
+      {isBackConfirmOpen && (
+        <section
+          className="confirm-back-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-back-title"
+        >
+          <div className="confirm-back-panel">
+            <h2 id="confirm-back-title">Leave this game?</h2>
+            <p>Your current game will end.</p>
+            <div className="confirm-back-actions">
+              <button
+                className="basic"
+                onClick={() => setIsBackConfirmOpen(false)}
+                type="button"
+              >
+                Keep playing
+              </button>
+              <button
+                className="basic confirm-back-danger"
+                onClick={handleConfirmBack}
+                type="button"
+              >
+                Leave game
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

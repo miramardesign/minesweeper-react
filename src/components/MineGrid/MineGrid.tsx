@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import styles from "./MineGrid.module.scss";
 import {
   getMineData,
@@ -17,8 +17,21 @@ import GameEndOverlay from "../GameEndOverlay/GameEndOverlay";
 import GameStateButton from "../GameStateButton/GameStateButton";
 import MineDataMap from "../MineDataMap/MineDataMap";
 
-const MineGrid = () => {
+type MineGridProps = {
+  onGameEnd: (result: "win" | "lose") => void;
+  onGameRestart: () => void;
+};
+
+const MineGrid = ({ onGameEnd, onGameRestart }: MineGridProps) => {
   const { state, dispatch } = useContext(GameContext);
+
+  useEffect(() => {
+    if (!state.isGameOver) {
+      return;
+    }
+
+    onGameEnd(state.isLost ? "lose" : "win");
+  }, [onGameEnd, state.isGameOver, state.isLost]);
 
   /**
    * clicked and run the turn.
@@ -81,6 +94,7 @@ const MineGrid = () => {
   const handleOnClickResetGrid = () => {
     const localState = { ...initialState, gridSize: state.gridSize };
     resetGrid(dispatch, localState);
+    onGameRestart();
   };
 
   return (
@@ -113,7 +127,7 @@ const MineGrid = () => {
       </article>
       <br />
       <hr className={styles.break} />
-      <article>
+      <article className={styles.boardWrap}>
         <MineDataMap
           mineData={state.mineData}
           leftClick={handleLeftClick}
@@ -131,6 +145,7 @@ const MineGrid = () => {
               : "Every safe square is clear."
           }
           onPlayAgain={handleOnClickResetGrid}
+          onRedo={handleOnClickResetGrid}
         />
       )}
     </section>

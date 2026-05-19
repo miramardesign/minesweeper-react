@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getRandomSudokuGrid,
   SudokuDifficulty,
   SudokuDifficultyGivenCounts,
   SudokuGrid,
 } from "../../utils/sudokuSetup";
+import { playWrongAnswerSound } from "../../utils/soundEffects";
 import GameEndOverlay from "../GameEndOverlay/GameEndOverlay";
 import styles from "./SudokuBoard.module.scss";
 
@@ -14,18 +15,35 @@ type UserCell = {
   isCorrect: boolean;
 };
 type UserEntries = Record<string, UserCell>;
+type KeypadPosition = "left" | "center" | "right";
 
 const numberPadRows = [
   ["delete", 1, 2, 3, 4],
   [5, 6, 7, 8, 9],
 ] as NumberPadOption[][];
+const keypadPositionStorageKey = "sudoku-keypad-position";
+const statusBelowStorageKey = "sudoku-status-below-keypad";
 
 const getCellKey = (iRow: number, iCol: number) => `${iRow}-${iCol}`;
 const getDisplayText = (value: string) =>
   value.charAt(0).toUpperCase() + value.slice(1);
+const getSavedKeypadPosition = (): KeypadPosition => {
+  const savedPosition = window.localStorage.getItem(keypadPositionStorageKey);
+
+  return savedPosition === "left" ||
+    savedPosition === "center" ||
+    savedPosition === "right"
+    ? savedPosition
+    : "center";
+};
+const getSavedStatusBelowKeypad = () => {
+  return window.localStorage.getItem(statusBelowStorageKey) === "true";
+};
 
 type SudokuBoardProps = {
   difficulty: SudokuDifficulty;
+  onGameEnd: (result: "win" | "lose") => void;
+  onGameRestart: () => void;
 };
 
 const getGivenCells = (givenCount: number) => {
@@ -41,7 +59,11 @@ const getGivenCells = (givenCount: number) => {
   return new Set(cellKeys.slice(0, givenCount));
 };
 
-const SudokuBoard = ({ difficulty }: SudokuBoardProps) => {
+const SudokuBoard = ({
+  difficulty,
+  onGameEnd,
+  onGameRestart,
+}: SudokuBoardProps) => {
   const [puzzleId, setPuzzleId] = useState(0);
   const solutionRows: SudokuGrid = useMemo(
     () => getRandomSudokuGrid(),
@@ -57,6 +79,11 @@ const SudokuBoard = ({ difficulty }: SudokuBoardProps) => {
   } | null>(null);
   const [userEntries, setUserEntries] = useState<UserEntries>({});
   const [mistakes, setMistakes] = useState(0);
+  const [keypadPosition, setKeypadPosition] =
+    useState<KeypadPosition>(getSavedKeypadPosition);
+  const [isStatusBelowKeypad, setIsStatusBelowKeypad] = useState(
+    getSavedStatusBelowKeypad
+  );
   const hiddenCellCount = 81 - givenCells.size;
   const correctEntryCount = Object.values(userEntries).filter(
     (entry) => entry.isCorrect
@@ -65,12 +92,62 @@ const SudokuBoard = ({ difficulty }: SudokuBoardProps) => {
   const hasLost = mistakes >= 3;
   const isGameOver = hasWon || hasLost;
 
+  useEffect(() => {
+    if (!isGameOver) {
+      return;
+    }
+
+    onGameEnd(hasWon ? "win" : "lose");
+  }, [hasWon, isGameOver, onGameEnd]);
+
+  useEffect(() => {
+    window.localStorage.setItem(keypadPositionStorageKey, keypadPosition);
+  }, [keypadPosition]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      statusBelowStorageKey,
+      isStatusBelowKeypad.toString()
+    );
+  }, [isStatusBelowKeypad]);
+
   const resetPuzzle = () => {
     setPuzzleId((currentPuzzleId) => currentPuzzleId + 1);
     setSelectedCell(null);
     setUserEntries({});
     setMistakes(0);
+    onGameRestart();
   };
+
+  const redoPuzzle = () => {
+    setSelectedCell(null);
+    setUserEntries({});
+    setMistakes(0);
+    onGameRestart();
+  };
+
+  const renderStatusRow = () => (
+    <div className={styles.statusRow}>
+      <span>Difficulty: {getDisplayText(difficulty)}</span>
+      <span>
+        Mistakes {mistakes}/3
+        <button
+          aria-label={
+            isStatusBelowKeypad
+              ? "Move status above number pad"
+              : "Move status below number pad"
+          }
+          className={styles.statusToggle}
+          onClick={() =>
+            setIsStatusBelowKeypad((currentStatusBelow) => !currentStatusBelow)
+          }
+          type="button"
+        >
+          {isStatusBelowKeypad ? "\u25B4" : "\u25BE"}
+        </button>
+      </span>
+    </div>
+  );
 
   const handleCellClick = (iRow: number, iCol: number) => {
     if (isGameOver) {
@@ -111,6 +188,7 @@ const SudokuBoard = ({ difficulty }: SudokuBoardProps) => {
     }));
 
     if (!isCorrect) {
+      playWrongAnswerSound();
       setMistakes((currentMistakes) => currentMistakes + 1);
     }
   };
@@ -154,34 +232,82 @@ const SudokuBoard = ({ difficulty }: SudokuBoardProps) => {
         ))}
       </div>
 
-      <div className={styles.statusRow}>
-        <span>Difficulty: {getDisplayText(difficulty)}</span>
-        <span>Mistakes {mistakes}/3</span>
+      {!isStatusBelowKeypad && renderStatusRow()}
+
+      <div
+        className={`${styles.keypadWrap} ${
+          isStatusBelowKeypad ? styles.keypadWrapRaised : ""
+        }`}
+      >
+        {keypadPosition !== "left" && (
+          <button
+            aria-label={
+              keypadPosition === "center"
+                ? "Move number pad left"
+                : "Move number pad to center"
+            }
+            className={`${styles.keypadShiftButton} ${styles.keypadShiftLeft}`}
+            onClick={() =>
+              setKeypadPosition(keypadPosition === "center" ? "left" : "center")
+            }
+            type="button"
+          >
+            {"\u2039"}
+          </button>
+        )}
+
+        <div
+          className={`${styles.numberPad} ${
+            keypadPosition === "right" ? styles.numberPadRight : ""
+          } ${
+            keypadPosition === "left" ? styles.numberPadLeft : ""
+          }`}
+          aria-label="Sudoku number pad"
+        >
+          {numberPadRows.map((row) => (
+            <div className={styles.numberPadRow} key={row.join("-")}>
+              {row.map((numberPadOption) => (
+                <button
+                  aria-label={
+                    numberPadOption === "delete"
+                      ? "Delete selected Sudoku cell"
+                      : `Enter ${numberPadOption}`
+                  }
+                  className={`${styles.numberButton} ${
+                    numberPadOption === "delete" ? styles.deleteButton : ""
+                  }`}
+                  key={numberPadOption}
+                  onClick={() => handleNumberPadClick(numberPadOption)}
+                  type="button"
+                >
+                  {numberPadOption === "delete" ? "X" : numberPadOption}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {keypadPosition !== "right" && (
+          <button
+            aria-label={
+              keypadPosition === "center"
+                ? "Move number pad right"
+                : "Move number pad to center"
+            }
+            className={`${styles.keypadShiftButton} ${styles.keypadShiftRight}`}
+            onClick={() =>
+              setKeypadPosition(
+                keypadPosition === "center" ? "right" : "center"
+              )
+            }
+            type="button"
+          >
+            {"\u203A"}
+          </button>
+        )}
       </div>
 
-      <div className={styles.numberPad} aria-label="Sudoku number pad">
-        {numberPadRows.map((row) => (
-          <div className={styles.numberPadRow} key={row.join("-")}>
-            {row.map((numberPadOption) => (
-              <button
-                aria-label={
-                  numberPadOption === "delete"
-                    ? "Delete selected Sudoku cell"
-                    : `Enter ${numberPadOption}`
-                }
-                className={`${styles.numberButton} ${
-                  numberPadOption === "delete" ? styles.deleteButton : ""
-                }`}
-                key={numberPadOption}
-                onClick={() => handleNumberPadClick(numberPadOption)}
-                type="button"
-              >
-                {numberPadOption === "delete" ? "X" : numberPadOption}
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
+      {isStatusBelowKeypad && renderStatusRow()}
 
       {isGameOver && (
         <GameEndOverlay
@@ -193,6 +319,7 @@ const SudokuBoard = ({ difficulty }: SudokuBoardProps) => {
               : "Three mistakes ends this round."
           }
           onPlayAgain={resetPuzzle}
+          onRedo={redoPuzzle}
         />
       )}
     </article>

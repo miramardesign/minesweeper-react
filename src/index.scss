@@ -6,7 +6,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #0a2447;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -24,10 +24,17 @@ a:hover {
   color: #535bf2;
 }
 
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  align-items: flex-start;
+  justify-content: center;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -44,7 +51,7 @@ button.basic {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #0f2747;
   cursor: pointer;
   transition: border-color 0.25s;
 }

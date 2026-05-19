@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { playCelebrationSound } from "../../utils/soundEffects";
 import styles from "./GameEndOverlay.module.scss";
 
 type GameEndOverlayProps = {
@@ -5,6 +7,7 @@ type GameEndOverlayProps = {
   title: string;
   message: string;
   onPlayAgain: () => void;
+  onRedo?: () => void;
 };
 
 const sparks = Array.from({ length: 12 }, (_, index) => index);
@@ -15,7 +18,14 @@ const GameEndOverlay = ({
   title,
   message,
   onPlayAgain,
+  onRedo,
 }: GameEndOverlayProps) => {
+  useEffect(() => {
+    if (result === "win") {
+      playCelebrationSound();
+    }
+  }, [result]);
+
   return (
     <section className={styles.overlay} role="status" aria-live="polite">
       <div className={styles.panel}>
@@ -37,9 +47,19 @@ const GameEndOverlay = ({
 
         <h2>{title}</h2>
         <p>{message}</p>
-        <button className="basic" onClick={onPlayAgain} type="button">
-          Play again
-        </button>
+        <div className={styles.actions}>
+          <button className="basic" onClick={onPlayAgain} type="button">
+            Play again
+          </button>
+          {result === "lose" && onRedo && (
+            <>
+              <span>|</span>
+              <button className="basic" onClick={onRedo} type="button">
+                Redo
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </section>
   );
