@@ -17,16 +17,20 @@ export const emptyMineDataStructure = getGridDataStructureFromGameConfig(
   getGameSize(gridSizeSeparate)
 );
 
-export const initialState: GameState = {
-  isLost: false,
-  isGameOver: false,
-  isGameStarted: false,
-  uncoveredCells: 0,
-  flagsPlaced: 0,
-  gameStateDisplay: GameStateDisplay.UNSTARTED,
-  gridSize: gridSizeSeparate,
-  mineData: emptyMineDataStructure,
+export const getInitialState = (gridSize: keyof GameTypes = gridSizeSeparate): GameState => {
+  return {
+    isLost: false,
+    isGameOver: false,
+    isGameStarted: false,
+    uncoveredCells: 0,
+    flagsPlaced: 0,
+    gameStateDisplay: GameStateDisplay.UNSTARTED,
+    gridSize,
+    mineData: getGridDataStructureFromGameConfig(getGameSize(gridSize)),
+  };
 };
+
+export const initialState: GameState = getInitialState();
 
 export const GameContext = createContext<{
   state: GameState;
@@ -36,8 +40,19 @@ export const GameContext = createContext<{
   dispatch: () => null,
 });
 
-export const GameProvider = ({ children }: PropsWithChildren) => {
-  const [state, dispatch] = useReducer(gameReducer, initialState, initGameReducer);
+type GameProviderProps = PropsWithChildren<{
+  initialGridSize?: keyof GameTypes;
+}>;
+
+export const GameProvider = ({
+  children,
+  initialGridSize = gridSizeSeparate,
+}: GameProviderProps) => {
+  const [state, dispatch] = useReducer(
+    gameReducer,
+    getInitialState(initialGridSize),
+    initGameReducer
+  );
 
   return (
     <GameContext.Provider value={{ state, dispatch }}>

@@ -1,0 +1,221 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(10, 10, 12, 0.72);
+}
+
+.panel {
+  display: grid;
+  justify-items: center;
+  width: min(100%, 420px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 2rem;
+  background: #1a1a1a;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: center;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.42);
+}
+
+.panel h2 {
+  margin: 1rem 0 0.5rem;
+  font-size: 2rem;
+}
+
+.panel p {
+  margin: 0 0 1.25rem;
+  color: #d8d8e4;
+}
+
+.animation {
+  position: relative;
+  width: 180px;
+  height: 140px;
+}
+
+.explosion {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.explosion::before,
+.explosion::after {
+  position: absolute;
+  content: "";
+  border-radius: 50%;
+  animation: blastPulse 1s ease-out infinite;
+}
+
+.explosion::before {
+  width: 72px;
+  height: 72px;
+  background: #ffdf6f;
+  box-shadow: 0 0 34px #ff792e;
+}
+
+.explosion::after {
+  width: 116px;
+  height: 116px;
+  border: 10px solid rgba(255, 92, 42, 0.7);
+  animation-delay: 0.1s;
+}
+
+.explosion span {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: #ff7448;
+  transform: rotate(calc(var(--spark-index) * 30deg)) translateY(-18px);
+  animation: sparkFly 1s ease-out infinite;
+}
+
+.explosion span:nth-child(1) {
+  --spark-index: 0;
+}
+.explosion span:nth-child(2) {
+  --spark-index: 1;
+}
+.explosion span:nth-child(3) {
+  --spark-index: 2;
+}
+.explosion span:nth-child(4) {
+  --spark-index: 3;
+}
+.explosion span:nth-child(5) {
+  --spark-index: 4;
+}
+.explosion span:nth-child(6) {
+  --spark-index: 5;
+}
+.explosion span:nth-child(7) {
+  --spark-index: 6;
+}
+.explosion span:nth-child(8) {
+  --spark-index: 7;
+}
+.explosion span:nth-child(9) {
+  --spark-index: 8;
+}
+.explosion span:nth-child(10) {
+  --spark-index: 9;
+}
+.explosion span:nth-child(11) {
+  --spark-index: 10;
+}
+.explosion span:nth-child(12) {
+  --spark-index: 11;
+}
+
+.fireworks {
+  position: absolute;
+  inset: 0;
+}
+
+.fireworks span {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: fireworkPop 1.4s ease-out infinite;
+}
+
+.fireworks span:nth-child(1) {
+  left: 16%;
+  top: 34%;
+  background: #ff6bcb;
+}
+.fireworks span:nth-child(2) {
+  left: 40%;
+  top: 18%;
+  background: #66e6ff;
+  animation-delay: 0.18s;
+}
+.fireworks span:nth-child(3) {
+  left: 66%;
+  top: 36%;
+  background: #fff06a;
+  animation-delay: 0.36s;
+}
+.fireworks span:nth-child(4) {
+  left: 26%;
+  top: 68%;
+  background: #7cff8d;
+  animation-delay: 0.54s;
+}
+.fireworks span:nth-child(5) {
+  left: 58%;
+  top: 72%;
+  background: #ff9d55;
+  animation-delay: 0.72s;
+}
+.fireworks span:nth-child(6) {
+  left: 82%;
+  top: 56%;
+  background: #a7a4ff;
+  animation-delay: 0.9s;
+}
+
+@keyframes blastPulse {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.45);
+  }
+  70% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes sparkFly {
+  0% {
+    opacity: 1;
+    transform: rotate(calc(var(--spark-index) * 30deg)) translateY(-18px)
+      scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(calc(var(--spark-index) * 30deg)) translateY(-78px)
+      scale(1.1);
+  }
+}
+
+@keyframes fireworkPop {
+  0% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 currentColor, 0 0 0 0 currentColor,
+      0 0 0 0 currentColor;
+    transform: scale(0.25);
+  }
+  100% {
+    opacity: 0;
+    box-shadow: 22px 0 0 2px currentColor, -22px 0 0 2px currentColor,
+      0 22px 0 2px currentColor, 0 -22px 0 2px currentColor,
+      16px 16px 0 1px currentColor, -16px -16px 0 1px currentColor,
+      16px -16px 0 1px currentColor, -16px 16px 0 1px currentColor;
+    transform: scale(1.2);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .panel {
+    border-color: rgba(33, 53, 71, 0.16);
+    background: #ffffff;
+    color: #213547;
+  }
+
+  .panel p {
+    color: #5f6673;
+  }
+}

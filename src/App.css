@@ -3,11 +3,7 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;  
-  
 }
-
-
-
 
 .card {
   padding: 2em;
@@ -15,4 +11,125 @@
 
 .read-the-docs {
   color: #888;
+}
+
+.App {
+  width: min(100%, 760px);
+}
+
+.game-header {
+  display: grid;
+  grid-template-columns: minmax(96px, 1fr) auto minmax(96px, 1fr);
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.game-header h1 {
+  margin: 0;
+  font-size: 2.25rem;
+}
+
+.header-back-button {
+  justify-self: start;
+}
+
+.header-timer {
+  justify-self: end;
+  min-width: 72px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  background: #1a1a1a;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.game-launcher {
+  display: grid;
+  gap: 2rem;
+}
+
+.game-list {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.game-card {
+  min-height: 150px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 1.5rem;
+  color: inherit;
+  background: #1a1a1a;
+  text-align: left;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.game-card:hover {
+  border-color: #646cff;
+  transform: translateY(-2px);
+}
+
+.game-card span,
+.game-card small {
+  display: block;
+}
+
+.game-card span {
+  margin-bottom: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.game-card small {
+  color: #b9b9c6;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.game-option-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.game-option-button {
+  min-width: 92px;
+}
+
+.placeholder-page {
+  display: grid;
+  min-height: 360px;
+  place-items: center;
+}
+
+@media (prefers-color-scheme: light) {
+  .game-card {
+    border-color: rgba(33, 53, 71, 0.16);
+    background: #f9f9f9;
+  }
+
+  .game-card small {
+    color: #5f6673;
+  }
+
+  .header-timer {
+    border-color: rgba(33, 53, 71, 0.16);
+    background: #f9f9f9;
+  }
+}
+
+@media (max-width: 560px) {
+  .game-header {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .header-back-button,
+  .header-timer {
+    justify-self: center;
+  }
 }

@@ -595,10 +595,6 @@ const onWinCondition = (
     type: GameActionType.CHANGE_GAMESTATE_DISPLAY,
     payload: GameStateDisplay.PLAY,
   });
-
-  window.setTimeout(() => {
-    window.alert("epic Win!!!1111");
-  }, 500);
 };
 
 const onLoseCondition = (
@@ -618,9 +614,6 @@ const onLoseCondition = (
     mineData[iRow][iCol].markedAs = "exploded";
   }
   uncoverAllCells(mineData, dispatch);
-  window.setTimeout(() => {
-    window.alert("boom!");
-  }, 500);
 };
 
 /**

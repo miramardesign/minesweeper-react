@@ -7,13 +7,13 @@ import {
   resetGrid,
   setCellMark,
 } from "../../utils/mineSetup";
-import { GameStateDisplay, GameTypesKeys } from "../../types/mineTypes";
+import { GameStateDisplay } from "../../types/mineTypes";
 import { GameSizes } from "../../utils/mineSetupData";
 import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
 import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountup";
-import GameSizeChooser from "../GameSizeChooser/GameSizeChooser";
 import { GameContext, initialState } from "../../contexts/GameProvider";
 import { GameActionType } from "../../types/state";
+import GameEndOverlay from "../GameEndOverlay/GameEndOverlay";
 import GameStateButton from "../GameStateButton/GameStateButton";
 import MineDataMap from "../MineDataMap/MineDataMap";
 
@@ -83,16 +83,6 @@ const MineGrid = () => {
     resetGrid(dispatch, localState);
   };
 
-  /** gridSize dropdown changes,
-   * change size and reset of cou rse
-   */
-  const handleOnChangeSize = (gridSize: GameTypesKeys) => {
-    console.log("size changed", gridSize);
-    console.log("gridsized changed.........to....", gridSize);
-    const localState = { ...initialState, gridSize: gridSize };
-    resetGrid(dispatch, localState);
-  };
-
   return (
     <section>
       {/* ==================================================================
@@ -103,7 +93,6 @@ const MineGrid = () => {
       */}
       {/* minedata olde, ineffecting placing mech.  {JSON.stringify(state.mineDataOlde)} */}
 
-      <GameSizeChooser chooseGameSize={handleOnChangeSize} />
       <article id="wrap-row-digital-display-reset">
         <DigitalDisplay
           id={"mines-remaining"}
@@ -132,6 +121,18 @@ const MineGrid = () => {
           rightClick={handleRightClick}
         />
       </article>
+      {state.isGameOver && (
+        <GameEndOverlay
+          result={state.isLost ? "lose" : "win"}
+          title={state.isLost ? "Boom!" : "You won!"}
+          message={
+            state.isLost
+              ? "That square was hiding a mine."
+              : "Every safe square is clear."
+          }
+          onPlayAgain={handleOnClickResetGrid}
+        />
+      )}
     </section>
   );
 };
