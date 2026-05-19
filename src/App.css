@@ -124,6 +124,22 @@
   min-width: 92px;
 }
 
+.game-option-button:disabled {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #8f98a8;
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.game-option-button:disabled:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.game-option-lock {
+  display: inline-block;
+  filter: grayscale(1) brightness(0) invert(1);
+}
+
 .placeholder-page {
   display: grid;
   min-height: 360px;
@@ -187,6 +203,16 @@
 
   .header-back-button {
     background: #f9f9f9;
+  }
+
+  .game-option-button:disabled,
+  .game-option-button:disabled:hover {
+    border-color: rgba(33, 53, 71, 0.14);
+    color: #8a93a3;
+  }
+
+  .game-option-lock {
+    filter: grayscale(1) brightness(0);
   }
 
   .confirm-back-panel {

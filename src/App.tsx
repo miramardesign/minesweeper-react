@@ -3,10 +3,11 @@ import MineGrid from "./components/MineGrid/MineGrid";
 import SudokuBoard from "./components/SudokuBoard/SudokuBoard";
 import { GameProvider } from "./contexts/GameProvider";
 import { GameTypesKeys } from "./types/mineTypes";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { SudokuDifficulty } from "./utils/sudokuSetup";
 
 type GameChoice = "launcher" | "minesweeper" | "sudoku";
+type SudokuProgress = Record<SudokuDifficulty, number>;
 
 const minesweeperOptions: Array<{ id: GameTypesKeys; label: string }> = [
   { id: "test", label: "Test" },
@@ -21,6 +22,20 @@ const sudokuOptions: Array<{ id: SudokuDifficulty; label: string }> = [
   { id: "hard", label: "Hard" },
   { id: "expert", label: "Expert" },
 ];
+const sudokuDifficultyOrder = sudokuOptions.map((option) => option.id);
+const sudokuWinsToUnlockNextDifficulty: SudokuProgress = {
+  easy: 5,
+  medium: 10,
+  hard: 15,
+  expert: 20,
+};
+const sudokuProgressStorageKey = "sudoku-progression";
+const defaultSudokuProgress: SudokuProgress = {
+  easy: 0,
+  medium: 0,
+  hard: 0,
+  expert: 0,
+};
 
 const gameOptions: Array<{
   id: Exclude<GameChoice, "launcher">;
@@ -39,15 +54,66 @@ const gameOptions: Array<{
   },
 ];
 
+const getSavedSudokuProgress = (): SudokuProgress => {
+  const savedProgress = window.localStorage.getItem(sudokuProgressStorageKey);
+
+  if (!savedProgress) {
+    return defaultSudokuProgress;
+  }
+
+  try {
+    const parsedProgress = JSON.parse(savedProgress) as Partial<SudokuProgress>;
+
+    return sudokuDifficultyOrder.reduce<SudokuProgress>(
+      (progress, difficulty) => ({
+        ...progress,
+        [difficulty]:
+          typeof parsedProgress[difficulty] === "number"
+            ? parsedProgress[difficulty]
+            : 0,
+      }),
+      { ...defaultSudokuProgress }
+    );
+  } catch {
+    return defaultSudokuProgress;
+  }
+};
+
+const getIsSudokuDifficultyUnlocked = (
+  difficulty: SudokuDifficulty,
+  progress: SudokuProgress
+) => {
+  const difficultyIndex = sudokuDifficultyOrder.indexOf(difficulty);
+
+  if (difficultyIndex <= 0) {
+    return true;
+  }
+
+  const previousDifficulty = sudokuDifficultyOrder[difficultyIndex - 1];
+
+  return (
+    progress[previousDifficulty] >=
+    sudokuWinsToUnlockNextDifficulty[previousDifficulty]
+  );
+};
+
 function App() {
   const [selectedGame, setSelectedGame] = useState<GameChoice>("launcher");
   const [selectedMinesweeperType, setSelectedMinesweeperType] =
     useState<GameTypesKeys>("beginner");
   const [selectedSudokuDifficulty, setSelectedSudokuDifficulty] =
     useState<SudokuDifficulty>("easy");
+  const [sudokuProgress, setSudokuProgress] = useState<SudokuProgress>(
+    getSavedSudokuProgress
+  );
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [isBackConfirmOpen, setIsBackConfirmOpen] = useState(false);
+  const selectedGameRef = useRef(selectedGame);
+  const selectedSudokuDifficultyRef = useRef(selectedSudokuDifficulty);
+
+  selectedGameRef.current = selectedGame;
+  selectedSudokuDifficultyRef.current = selectedSudokuDifficulty;
 
   useEffect(() => {
     setElapsedSeconds(0);
@@ -72,6 +138,24 @@ function App() {
 
     if (result === "lose") {
       setElapsedSeconds(0);
+      return;
+    }
+
+    if (selectedGameRef.current === "sudoku") {
+      setSudokuProgress((currentProgress) => {
+        const nextProgress = {
+          ...currentProgress,
+          [selectedSudokuDifficultyRef.current]:
+            currentProgress[selectedSudokuDifficultyRef.current] + 1,
+        };
+
+        window.localStorage.setItem(
+          sudokuProgressStorageKey,
+          JSON.stringify(nextProgress)
+        );
+
+        return nextProgress;
+      });
     }
   }, []);
 
@@ -152,26 +236,64 @@ function App() {
               <span>{game.title}</span>
               <small>{game.description}</small>
                 <div className="game-option-list">
-                  {gameSetupOptions.map((option) => (
-                    <button
-                      className="basic game-option-button"
-                      key={option.id}
-                      onClick={() => {
-                        if (game.id === "minesweeper") {
-                          setSelectedMinesweeperType(option.id as GameTypesKeys);
-                        } else {
-                          setSelectedSudokuDifficulty(
-                            option.id as SudokuDifficulty
-                          );
-                        }
+                  {gameSetupOptions.map((option) => {
+                    const isSudokuOption = game.id === "sudoku";
+                    const isLocked =
+                      isSudokuOption &&
+                      !getIsSudokuDifficultyUnlocked(
+                        option.id as SudokuDifficulty,
+                        sudokuProgress
+                      );
+                    const previousSudokuDifficulty =
+                      isSudokuOption &&
+                      sudokuDifficultyOrder[
+                        sudokuDifficultyOrder.indexOf(
+                          option.id as SudokuDifficulty
+                        ) - 1
+                      ];
+                    const unlockRequirement = previousSudokuDifficulty
+                      ? sudokuWinsToUnlockNextDifficulty[
+                          previousSudokuDifficulty
+                        ]
+                      : 0;
+                    const lockedMessage = `Complete ${unlockRequirement} games on the previous Sudoku difficulty to unlock.`;
 
-                        setSelectedGame(game.id);
-                      }}
-                      type="button"
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                    return (
+                      <button
+                        aria-label={
+                          isLocked ? `${option.label} locked. ${lockedMessage}` : option.label
+                        }
+                        className="basic game-option-button"
+                        disabled={isLocked}
+                        key={option.id}
+                        onClick={() => {
+                          if (game.id === "minesweeper") {
+                            setSelectedMinesweeperType(
+                              option.id as GameTypesKeys
+                            );
+                          } else {
+                            setSelectedSudokuDifficulty(
+                              option.id as SudokuDifficulty
+                            );
+                          }
+
+                          setSelectedGame(game.id);
+                        }}
+                        title={
+                          isLocked ? lockedMessage : undefined
+                        }
+                        type="button"
+                      >
+                        {option.label}
+                        {isLocked ? (
+                          <span className="game-option-lock" aria-hidden="true">
+                            {" "}
+                            {"\uD83D\uDD12"}
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
                 </div>
               </article>
             );

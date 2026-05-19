@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getRandomSudokuGrid,
   SudokuDifficulty,
@@ -16,13 +16,14 @@ type UserCell = {
 };
 type UserEntries = Record<string, UserCell>;
 type KeypadPosition = "left" | "center" | "right";
+type KeypadVerticalPosition = "aboveStatus" | "default" | "down";
 
 const numberPadRows = [
   ["delete", 1, 2, 3, 4],
   [5, 6, 7, 8, 9],
 ] as NumberPadOption[][];
 const keypadPositionStorageKey = "sudoku-keypad-position";
-const statusBelowStorageKey = "sudoku-status-below-keypad";
+const keypadVerticalPositionStorageKey = "sudoku-keypad-vertical-position";
 
 const getCellKey = (iRow: number, iCol: number) => `${iRow}-${iCol}`;
 const getDisplayText = (value: string) =>
@@ -36,8 +37,16 @@ const getSavedKeypadPosition = (): KeypadPosition => {
     ? savedPosition
     : "center";
 };
-const getSavedStatusBelowKeypad = () => {
-  return window.localStorage.getItem(statusBelowStorageKey) === "true";
+const getSavedKeypadVerticalPosition = (): KeypadVerticalPosition => {
+  const savedPosition = window.localStorage.getItem(
+    keypadVerticalPositionStorageKey
+  );
+
+  return savedPosition === "aboveStatus" ||
+    savedPosition === "default" ||
+    savedPosition === "down"
+    ? savedPosition
+    : "default";
 };
 
 type SudokuBoardProps = {
@@ -81,9 +90,10 @@ const SudokuBoard = ({
   const [mistakes, setMistakes] = useState(0);
   const [keypadPosition, setKeypadPosition] =
     useState<KeypadPosition>(getSavedKeypadPosition);
-  const [isStatusBelowKeypad, setIsStatusBelowKeypad] = useState(
-    getSavedStatusBelowKeypad
+  const [keypadVerticalPosition, setKeypadVerticalPosition] = useState(
+    getSavedKeypadVerticalPosition
   );
+  const hasReportedGameEnd = useRef(false);
   const hiddenCellCount = 81 - givenCells.size;
   const correctEntryCount = Object.values(userEntries).filter(
     (entry) => entry.isCorrect
@@ -94,9 +104,15 @@ const SudokuBoard = ({
 
   useEffect(() => {
     if (!isGameOver) {
+      hasReportedGameEnd.current = false;
       return;
     }
 
+    if (hasReportedGameEnd.current) {
+      return;
+    }
+
+    hasReportedGameEnd.current = true;
     onGameEnd(hasWon ? "win" : "lose");
   }, [hasWon, isGameOver, onGameEnd]);
 
@@ -106,10 +122,10 @@ const SudokuBoard = ({
 
   useEffect(() => {
     window.localStorage.setItem(
-      statusBelowStorageKey,
-      isStatusBelowKeypad.toString()
+      keypadVerticalPositionStorageKey,
+      keypadVerticalPosition
     );
-  }, [isStatusBelowKeypad]);
+  }, [keypadVerticalPosition]);
 
   const resetPuzzle = () => {
     setPuzzleId((currentPuzzleId) => currentPuzzleId + 1);
@@ -129,23 +145,116 @@ const SudokuBoard = ({
   const renderStatusRow = () => (
     <div className={styles.statusRow}>
       <span>Difficulty: {getDisplayText(difficulty)}</span>
-      <span>
-        Mistakes {mistakes}/3
+      <span>Mistakes {mistakes}/3</span>
+    </div>
+  );
+
+  const moveKeypadUp = () => {
+    setKeypadVerticalPosition((currentPosition) =>
+      currentPosition === "down" ? "default" : "aboveStatus"
+    );
+  };
+
+  const moveKeypadDown = () => {
+    setKeypadVerticalPosition((currentPosition) =>
+      currentPosition === "aboveStatus" ? "default" : "down"
+    );
+  };
+
+  const renderKeypad = () => (
+    <div
+      className={`${styles.keypadStack} ${
+        keypadVerticalPosition === "default" ? styles.keypadStackDefault : ""
+      } ${keypadVerticalPosition === "down" ? styles.keypadStackDown : ""}`}
+    >
+      {keypadVerticalPosition !== "aboveStatus" && (
         <button
-          aria-label={
-            isStatusBelowKeypad
-              ? "Move status above number pad"
-              : "Move status below number pad"
-          }
-          className={styles.statusToggle}
-          onClick={() =>
-            setIsStatusBelowKeypad((currentStatusBelow) => !currentStatusBelow)
-          }
+          aria-label="Move number pad up"
+          className={styles.keypadVerticalButton}
+          onClick={moveKeypadUp}
           type="button"
         >
-          {isStatusBelowKeypad ? "\u25B4" : "\u25BE"}
+          <span className={styles.chevronUp}>{"\u2039"}</span>
         </button>
-      </span>
+      )}
+
+      <div className={styles.keypadWrap}>
+        {keypadPosition !== "left" && (
+          <button
+            aria-label={
+              keypadPosition === "center"
+                ? "Move number pad left"
+                : "Move number pad to center"
+            }
+            className={`${styles.keypadShiftButton} ${styles.keypadShiftLeft}`}
+            onClick={() =>
+              setKeypadPosition(keypadPosition === "center" ? "left" : "center")
+            }
+            type="button"
+          >
+            {"\u2039"}
+          </button>
+        )}
+
+        <div
+          className={`${styles.numberPad} ${
+            keypadPosition === "right" ? styles.numberPadRight : ""
+          } ${keypadPosition === "left" ? styles.numberPadLeft : ""}`}
+          aria-label="Sudoku number pad"
+        >
+          {numberPadRows.map((row) => (
+            <div className={styles.numberPadRow} key={row.join("-")}>
+              {row.map((numberPadOption) => (
+                <button
+                  aria-label={
+                    numberPadOption === "delete"
+                      ? "Delete selected Sudoku cell"
+                      : `Enter ${numberPadOption}`
+                  }
+                  className={`${styles.numberButton} ${
+                    numberPadOption === "delete" ? styles.deleteButton : ""
+                  }`}
+                  key={numberPadOption}
+                  onClick={() => handleNumberPadClick(numberPadOption)}
+                  type="button"
+                >
+                  {numberPadOption === "delete" ? "X" : numberPadOption}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {keypadPosition !== "right" && (
+          <button
+            aria-label={
+              keypadPosition === "center"
+                ? "Move number pad right"
+                : "Move number pad to center"
+            }
+            className={`${styles.keypadShiftButton} ${styles.keypadShiftRight}`}
+            onClick={() =>
+              setKeypadPosition(
+                keypadPosition === "center" ? "right" : "center"
+              )
+            }
+            type="button"
+          >
+            {"\u203A"}
+          </button>
+        )}
+      </div>
+
+      {keypadVerticalPosition !== "down" && (
+        <button
+          aria-label="Move number pad down"
+          className={styles.keypadVerticalButton}
+          onClick={moveKeypadDown}
+          type="button"
+        >
+          <span className={styles.chevronDown}>{"\u2039"}</span>
+        </button>
+      )}
     </div>
   );
 
@@ -193,6 +302,15 @@ const SudokuBoard = ({
     }
   };
 
+  const selectedCellKey = selectedCell
+    ? getCellKey(selectedCell.iRow, selectedCell.iCol)
+    : null;
+  const selectedDisplayValue = selectedCell
+    ? givenCells.has(selectedCellKey!)
+      ? solutionRows[selectedCell.iRow][selectedCell.iCol]
+      : userEntries[selectedCellKey!]?.value
+    : undefined;
+
   return (
     <article className={styles.sudoku}>
       <div className={styles.board} aria-label="Sudoku board">
@@ -202,11 +320,18 @@ const SudokuBoard = ({
               const cellKey = getCellKey(iRow, iCol);
               const isGiven = givenCells.has(cellKey);
               const userEntry = userEntries[cellKey];
-              const isHighlighted =
-                selectedCell?.iRow === iRow || selectedCell?.iCol === iCol;
               const isSelected =
                 selectedCell?.iRow === iRow && selectedCell?.iCol === iCol;
-              const displayValue = isGiven ? solutionRows[iRow][iCol] : userEntry?.value;
+              const displayValue = isGiven
+                ? solutionRows[iRow][iCol]
+                : userEntry?.value;
+              const matchesSelectedValue =
+                selectedDisplayValue !== undefined &&
+                displayValue === selectedDisplayValue;
+              const isHighlighted =
+                selectedCell?.iRow === iRow ||
+                selectedCell?.iCol === iCol ||
+                matchesSelectedValue;
 
               return (
                 <button
@@ -232,82 +357,9 @@ const SudokuBoard = ({
         ))}
       </div>
 
-      {!isStatusBelowKeypad && renderStatusRow()}
-
-      <div
-        className={`${styles.keypadWrap} ${
-          isStatusBelowKeypad ? styles.keypadWrapRaised : ""
-        }`}
-      >
-        {keypadPosition !== "left" && (
-          <button
-            aria-label={
-              keypadPosition === "center"
-                ? "Move number pad left"
-                : "Move number pad to center"
-            }
-            className={`${styles.keypadShiftButton} ${styles.keypadShiftLeft}`}
-            onClick={() =>
-              setKeypadPosition(keypadPosition === "center" ? "left" : "center")
-            }
-            type="button"
-          >
-            {"\u2039"}
-          </button>
-        )}
-
-        <div
-          className={`${styles.numberPad} ${
-            keypadPosition === "right" ? styles.numberPadRight : ""
-          } ${
-            keypadPosition === "left" ? styles.numberPadLeft : ""
-          }`}
-          aria-label="Sudoku number pad"
-        >
-          {numberPadRows.map((row) => (
-            <div className={styles.numberPadRow} key={row.join("-")}>
-              {row.map((numberPadOption) => (
-                <button
-                  aria-label={
-                    numberPadOption === "delete"
-                      ? "Delete selected Sudoku cell"
-                      : `Enter ${numberPadOption}`
-                  }
-                  className={`${styles.numberButton} ${
-                    numberPadOption === "delete" ? styles.deleteButton : ""
-                  }`}
-                  key={numberPadOption}
-                  onClick={() => handleNumberPadClick(numberPadOption)}
-                  type="button"
-                >
-                  {numberPadOption === "delete" ? "X" : numberPadOption}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        {keypadPosition !== "right" && (
-          <button
-            aria-label={
-              keypadPosition === "center"
-                ? "Move number pad right"
-                : "Move number pad to center"
-            }
-            className={`${styles.keypadShiftButton} ${styles.keypadShiftRight}`}
-            onClick={() =>
-              setKeypadPosition(
-                keypadPosition === "center" ? "right" : "center"
-              )
-            }
-            type="button"
-          >
-            {"\u203A"}
-          </button>
-        )}
-      </div>
-
-      {isStatusBelowKeypad && renderStatusRow()}
+      {keypadVerticalPosition === "aboveStatus" && renderKeypad()}
+      {renderStatusRow()}
+      {keypadVerticalPosition !== "aboveStatus" && renderKeypad()}
 
       {isGameOver && (
         <GameEndOverlay
