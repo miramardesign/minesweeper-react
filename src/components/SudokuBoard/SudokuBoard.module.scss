@@ -11,6 +11,12 @@
   overflow-x: hidden;
 }
 
+.boardStack {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
 .board {
   display: inline-grid;
   grid-template-rows: repeat(9, var(--sudoku-cell-size));
@@ -33,7 +39,7 @@
   color: #111;
   cursor: pointer;
   font: inherit;
-  font-size: 1.25rem;
+  font-size: 24px;
 }
 
 .cell:hover {
@@ -50,13 +56,12 @@
 }
 
 .givenCell {
-  font-weight: 800;
+  font-weight: 400;
 }
 
 .correctCell,
 .correctCell:hover {
-  background: #bfe3ff;
-  color: #102a43;
+  color: #0f2747;
 }
 
 .incorrectCell,
@@ -111,16 +116,23 @@
   justify-items: center;
   gap: 0.45rem;
   width: 100%;
-  transition: margin-top 0.2s ease, transform 0.2s ease;
+  transition: margin-top 0.2s ease;
 }
 
-.keypadStackDefault {
-  margin-top: clamp(1.5rem, 7vh, 3.75rem);
+.keypadStackStep0 {
+  margin-top: 0;
 }
 
-.keypadStackDown {
-  margin-top: clamp(2rem, 9vh, 4.25rem);
-  transform: translateY(6px);
+.keypadStackStep1 {
+  margin-top: 1rem;
+}
+
+.keypadStackStep2 {
+  margin-top: 2rem;
+}
+
+.keypadStackStep3 {
+  margin-top: 3rem;
 }
 
 .keypadWrap {
@@ -179,11 +191,11 @@
 }
 
 .chevronUp {
-  transform: rotate(90deg);
+  transform: translateX(2px) rotate(90deg);
 }
 
 .chevronDown {
-  transform: rotate(-90deg);
+  transform: translateX(-2px) rotate(-90deg);
 }
 
 .keypadVerticalButton:hover {
@@ -223,6 +235,16 @@
   border-color: #646cff;
 }
 
+.numberButton:disabled {
+  border-color: var(--sudoku-keypad-border);
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+.completedNumberButton {
+  color: #7ff0a0;
+}
+
 .deleteButton {
   color: var(--sudoku-keypad-delete-color);
 }
@@ -232,5 +254,9 @@
     --sudoku-keypad-bg: #f9f9f9;
     --sudoku-keypad-border: #c7ced8;
     --sudoku-keypad-delete-color: #b42318;
+  }
+
+  .completedNumberButton {
+    color: #146c2e;
   }
 }

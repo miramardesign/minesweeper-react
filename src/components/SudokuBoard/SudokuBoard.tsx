@@ -16,7 +16,7 @@ type UserCell = {
 };
 type UserEntries = Record<string, UserCell>;
 type KeypadPosition = "left" | "center" | "right";
-type KeypadVerticalPosition = "aboveStatus" | "default" | "down";
+type KeypadVerticalPosition = 0 | 1 | 2 | 3;
 
 const numberPadRows = [
   ["delete", 1, 2, 3, 4],
@@ -24,6 +24,7 @@ const numberPadRows = [
 ] as NumberPadOption[][];
 const keypadPositionStorageKey = "sudoku-keypad-position";
 const keypadVerticalPositionStorageKey = "sudoku-keypad-vertical-position";
+const keypadVerticalPositions: KeypadVerticalPosition[] = [0, 1, 2, 3];
 
 const getCellKey = (iRow: number, iCol: number) => `${iRow}-${iCol}`;
 const getDisplayText = (value: string) =>
@@ -38,15 +39,15 @@ const getSavedKeypadPosition = (): KeypadPosition => {
     : "center";
 };
 const getSavedKeypadVerticalPosition = (): KeypadVerticalPosition => {
-  const savedPosition = window.localStorage.getItem(
-    keypadVerticalPositionStorageKey
+  const savedPosition = Number(
+    window.localStorage.getItem(keypadVerticalPositionStorageKey)
   );
 
-  return savedPosition === "aboveStatus" ||
-    savedPosition === "default" ||
-    savedPosition === "down"
-    ? savedPosition
-    : "default";
+  return keypadVerticalPositions.includes(
+    savedPosition as KeypadVerticalPosition
+  )
+    ? (savedPosition as KeypadVerticalPosition)
+    : 1;
 };
 
 type SudokuBoardProps = {
@@ -98,6 +99,29 @@ const SudokuBoard = ({
   const correctEntryCount = Object.values(userEntries).filter(
     (entry) => entry.isCorrect
   ).length;
+  const completedNumbers = useMemo(() => {
+    const numberCounts = new Map<number, number>();
+
+    solutionRows.forEach((row, iRow) => {
+      row.forEach((solutionValue, iCol) => {
+        const cellKey = getCellKey(iRow, iCol);
+        const userEntry = userEntries[cellKey];
+
+        if (givenCells.has(cellKey) || userEntry?.isCorrect) {
+          numberCounts.set(
+            solutionValue,
+            (numberCounts.get(solutionValue) ?? 0) + 1
+          );
+        }
+      });
+    });
+
+    return new Set(
+      Array.from(numberCounts.entries())
+        .filter(([, count]) => count === 9)
+        .map(([value]) => value)
+    );
+  }, [givenCells, solutionRows, userEntries]);
   const hasWon = correctEntryCount === hiddenCellCount;
   const hasLost = mistakes >= 3;
   const isGameOver = hasWon || hasLost;
@@ -123,7 +147,7 @@ const SudokuBoard = ({
   useEffect(() => {
     window.localStorage.setItem(
       keypadVerticalPositionStorageKey,
-      keypadVerticalPosition
+      keypadVerticalPosition.toString()
     );
   }, [keypadVerticalPosition]);
 
@@ -151,23 +175,23 @@ const SudokuBoard = ({
 
   const moveKeypadUp = () => {
     setKeypadVerticalPosition((currentPosition) =>
-      currentPosition === "down" ? "default" : "aboveStatus"
+      Math.max(0, currentPosition - 1) as KeypadVerticalPosition
     );
   };
 
   const moveKeypadDown = () => {
     setKeypadVerticalPosition((currentPosition) =>
-      currentPosition === "aboveStatus" ? "default" : "down"
+      Math.min(3, currentPosition + 1) as KeypadVerticalPosition
     );
   };
 
   const renderKeypad = () => (
     <div
       className={`${styles.keypadStack} ${
-        keypadVerticalPosition === "default" ? styles.keypadStackDefault : ""
-      } ${keypadVerticalPosition === "down" ? styles.keypadStackDown : ""}`}
+        styles[`keypadStackStep${keypadVerticalPosition}`]
+      }`}
     >
-      {keypadVerticalPosition !== "aboveStatus" && (
+      {keypadVerticalPosition > 0 && (
         <button
           aria-label="Move number pad up"
           className={styles.keypadVerticalButton}
@@ -204,23 +228,36 @@ const SudokuBoard = ({
         >
           {numberPadRows.map((row) => (
             <div className={styles.numberPadRow} key={row.join("-")}>
-              {row.map((numberPadOption) => (
-                <button
-                  aria-label={
-                    numberPadOption === "delete"
-                      ? "Delete selected Sudoku cell"
-                      : `Enter ${numberPadOption}`
-                  }
-                  className={`${styles.numberButton} ${
-                    numberPadOption === "delete" ? styles.deleteButton : ""
-                  }`}
-                  key={numberPadOption}
-                  onClick={() => handleNumberPadClick(numberPadOption)}
-                  type="button"
-                >
-                  {numberPadOption === "delete" ? "X" : numberPadOption}
-                </button>
-              ))}
+              {row.map((numberPadOption) => {
+                const isCompletedNumber =
+                  typeof numberPadOption === "number" &&
+                  completedNumbers.has(numberPadOption);
+
+                return (
+                  <button
+                    aria-label={
+                      numberPadOption === "delete"
+                        ? "Delete selected Sudoku cell"
+                        : isCompletedNumber
+                        ? `${numberPadOption} completed`
+                        : `Enter ${numberPadOption}`
+                    }
+                    className={`${styles.numberButton} ${
+                      numberPadOption === "delete" ? styles.deleteButton : ""
+                    } ${isCompletedNumber ? styles.completedNumberButton : ""}`}
+                    disabled={isCompletedNumber}
+                    key={numberPadOption}
+                    onClick={() => handleNumberPadClick(numberPadOption)}
+                    type="button"
+                  >
+                    {isCompletedNumber
+                      ? "\u2713"
+                      : numberPadOption === "delete"
+                      ? "X"
+                      : numberPadOption}
+                  </button>
+                );
+              })}
             </div>
           ))}
         </div>
@@ -245,7 +282,7 @@ const SudokuBoard = ({
         )}
       </div>
 
-      {keypadVerticalPosition !== "down" && (
+      {keypadVerticalPosition < 3 && (
         <button
           aria-label="Move number pad down"
           className={styles.keypadVerticalButton}
@@ -272,7 +309,13 @@ const SudokuBoard = ({
     }
 
     const cellKey = getCellKey(selectedCell.iRow, selectedCell.iCol);
+    const currentEntry = userEntries[cellKey];
+
     if (givenCells.has(cellKey)) {
+      return;
+    }
+
+    if (currentEntry?.isCorrect) {
       return;
     }
 
@@ -313,53 +356,55 @@ const SudokuBoard = ({
 
   return (
     <article className={styles.sudoku}>
-      <div className={styles.board} aria-label="Sudoku board">
-        {solutionRows.map((row, iRow) => (
-          <div className={styles.row} key={iRow}>
-            {row.map((_, iCol) => {
-              const cellKey = getCellKey(iRow, iCol);
-              const isGiven = givenCells.has(cellKey);
-              const userEntry = userEntries[cellKey];
-              const isSelected =
-                selectedCell?.iRow === iRow && selectedCell?.iCol === iCol;
-              const displayValue = isGiven
-                ? solutionRows[iRow][iCol]
-                : userEntry?.value;
-              const matchesSelectedValue =
-                selectedDisplayValue !== undefined &&
-                displayValue === selectedDisplayValue;
-              const isHighlighted =
-                selectedCell?.iRow === iRow ||
-                selectedCell?.iCol === iCol ||
-                matchesSelectedValue;
+      <div className={styles.boardStack}>
+        {renderStatusRow()}
+        <div className={styles.board} aria-label="Sudoku board">
+          {solutionRows.map((row, iRow) => (
+            <div className={styles.row} key={iRow}>
+              {row.map((_, iCol) => {
+                const cellKey = getCellKey(iRow, iCol);
+                const isGiven = givenCells.has(cellKey);
+                const userEntry = userEntries[cellKey];
+                const isSelected =
+                  selectedCell?.iRow === iRow && selectedCell?.iCol === iCol;
+                const displayValue = isGiven
+                  ? solutionRows[iRow][iCol]
+                  : userEntry?.value;
+                const matchesSelectedValue =
+                  selectedDisplayValue !== undefined &&
+                  displayValue === selectedDisplayValue;
+                const isHighlighted =
+                  selectedCell?.iRow === iRow ||
+                  selectedCell?.iCol === iCol ||
+                  matchesSelectedValue;
 
-              return (
-                <button
-                  aria-label={`Sudoku cell row ${iRow + 1} column ${iCol + 1}`}
-                  className={`${styles.cell} ${
-                    isHighlighted ? styles.highlightedCell : ""
-                  } ${isSelected ? styles.selectedCell : ""} ${
-                    isGiven ? styles.givenCell : ""
-                  } ${
-                    userEntry?.isCorrect === true ? styles.correctCell : ""
-                  } ${
-                    userEntry?.isCorrect === false ? styles.incorrectCell : ""
-                  }`}
-                  key={iCol}
-                  onClick={() => handleCellClick(iRow, iCol)}
-                  type="button"
-                >
-                  {displayValue}
-                </button>
-              );
-            })}
-          </div>
-        ))}
+                return (
+                  <button
+                    aria-label={`Sudoku cell row ${iRow + 1} column ${
+                      iCol + 1
+                    }`}
+                    className={`${styles.cell} ${
+                      isHighlighted ? styles.highlightedCell : ""
+                    } ${isSelected ? styles.selectedCell : ""} ${
+                      isGiven ? styles.givenCell : ""
+                    } ${
+                      userEntry?.isCorrect === true ? styles.correctCell : ""
+                    } ${
+                      userEntry?.isCorrect === false ? styles.incorrectCell : ""
+                    }`}
+                    key={iCol}
+                    onClick={() => handleCellClick(iRow, iCol)}
+                    type="button"
+                  >
+                    {displayValue}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
-
-      {keypadVerticalPosition === "aboveStatus" && renderKeypad()}
-      {renderStatusRow()}
-      {keypadVerticalPosition !== "aboveStatus" && renderKeypad()}
+      {renderKeypad()}
 
       {isGameOver && (
         <GameEndOverlay
