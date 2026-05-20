@@ -48,6 +48,19 @@ export const playWrongAnswerSound = async () => {
   oscillator.stop(now + 0.22);
 };
 
+export const playPositiveBeepSound = async () => {
+  const context = getAudioContext();
+  if (!context) {
+    return;
+  }
+
+  await startContext(context);
+
+  const now = context.currentTime;
+  playTone(context, now, 659.25, 0.12);
+  playTone(context, now + 0.08, 880, 0.14);
+};
+
 const playTone = (
   context: AudioContext,
   startTime: number,

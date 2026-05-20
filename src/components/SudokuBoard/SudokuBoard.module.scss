@@ -3,6 +3,8 @@
   --sudoku-keypad-bg: #0f2747;
   --sudoku-keypad-border: rgba(255, 255, 255, 0.2);
   --sudoku-keypad-delete-color: #ffb7b7;
+  --sudoku-keypad-delete-icon-bg: #ffb7b7;
+  --sudoku-keypad-delete-icon-text: #0f2747;
 
   display: grid;
   justify-items: center;
@@ -12,9 +14,26 @@
 }
 
 .boardStack {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: 4px;
+}
+
+.completedNumberToast {
+  position: absolute;
+  top: 2rem;
+  z-index: 5;
+  border: 1px solid rgba(15, 39, 71, 0.16);
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  background: rgba(247, 247, 247, 0.94);
+  color: #0f2747;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .board {
@@ -132,7 +151,7 @@
 }
 
 .keypadStackStep3 {
-  margin-top: 3rem;
+  margin-top: calc(3rem + 20px);
 }
 
 .keypadWrap {
@@ -249,11 +268,26 @@
   color: var(--sudoku-keypad-delete-color);
 }
 
+.deleteIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 20px;
+  padding-left: 4px;
+  clip-path: polygon(22% 0, 100% 0, 100% 100%, 22% 100%, 0 50%);
+  background: var(--sudoku-keypad-delete-icon-bg);
+  color: var(--sudoku-keypad-delete-icon-text);
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
 @media (prefers-color-scheme: light) {
   .sudoku {
     --sudoku-keypad-bg: #f9f9f9;
     --sudoku-keypad-border: #c7ced8;
     --sudoku-keypad-delete-color: #b42318;
+    --sudoku-keypad-delete-icon-bg: #b42318;
+    --sudoku-keypad-delete-icon-text: #ffffff;
   }
 
   .completedNumberButton {

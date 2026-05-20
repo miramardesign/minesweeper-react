@@ -5,7 +5,10 @@ import {
   SudokuDifficultyGivenCounts,
   SudokuGrid,
 } from "../../utils/sudokuSetup";
-import { playWrongAnswerSound } from "../../utils/soundEffects";
+import {
+  playPositiveBeepSound,
+  playWrongAnswerSound,
+} from "../../utils/soundEffects";
 import GameEndOverlay from "../GameEndOverlay/GameEndOverlay";
 import styles from "./SudokuBoard.module.scss";
 
@@ -19,8 +22,8 @@ type KeypadPosition = "left" | "center" | "right";
 type KeypadVerticalPosition = 0 | 1 | 2 | 3;
 
 const numberPadRows = [
-  ["delete", 1, 2, 3, 4],
-  [5, 6, 7, 8, 9],
+  [1, 2, 3, 4, 5],
+  [6, 7, 8, 9, "delete"],
 ] as NumberPadOption[][];
 const keypadPositionStorageKey = "sudoku-keypad-position";
 const keypadVerticalPositionStorageKey = "sudoku-keypad-vertical-position";
@@ -52,8 +55,10 @@ const getSavedKeypadVerticalPosition = (): KeypadVerticalPosition => {
 
 type SudokuBoardProps = {
   difficulty: SudokuDifficulty;
+  unlockedDifficultyLabel?: string;
   onGameEnd: (result: "win" | "lose") => void;
   onGameRestart: () => void;
+  onUnlockedGameRestart?: () => void;
 };
 
 const getGivenCells = (givenCount: number) => {
@@ -71,8 +76,10 @@ const getGivenCells = (givenCount: number) => {
 
 const SudokuBoard = ({
   difficulty,
+  unlockedDifficultyLabel,
   onGameEnd,
   onGameRestart,
+  onUnlockedGameRestart,
 }: SudokuBoardProps) => {
   const [puzzleId, setPuzzleId] = useState(0);
   const solutionRows: SudokuGrid = useMemo(
@@ -89,12 +96,15 @@ const SudokuBoard = ({
   } | null>(null);
   const [userEntries, setUserEntries] = useState<UserEntries>({});
   const [mistakes, setMistakes] = useState(0);
+  const [completedNumberNotification, setCompletedNumberNotification] =
+    useState<number | null>(null);
   const [keypadPosition, setKeypadPosition] =
     useState<KeypadPosition>(getSavedKeypadPosition);
   const [keypadVerticalPosition, setKeypadVerticalPosition] = useState(
     getSavedKeypadVerticalPosition
   );
   const hasReportedGameEnd = useRef(false);
+  const previousCompletedNumbers = useRef<Set<number>>(new Set());
   const hiddenCellCount = 81 - givenCells.size;
   const correctEntryCount = Object.values(userEntries).filter(
     (entry) => entry.isCorrect
@@ -151,11 +161,41 @@ const SudokuBoard = ({
     );
   }, [keypadVerticalPosition]);
 
+  useEffect(() => {
+    const newlyCompletedNumber = Array.from(completedNumbers).find(
+      (completedNumber) =>
+        !previousCompletedNumbers.current.has(completedNumber)
+    );
+
+    previousCompletedNumbers.current = new Set(completedNumbers);
+
+    if (newlyCompletedNumber === undefined) {
+      return;
+    }
+
+    setCompletedNumberNotification(newlyCompletedNumber);
+    playPositiveBeepSound();
+
+    const notificationTimer = window.setTimeout(() => {
+      setCompletedNumberNotification(null);
+    }, 1400);
+
+    return () => window.clearTimeout(notificationTimer);
+  }, [completedNumbers]);
+
   const resetPuzzle = () => {
     setPuzzleId((currentPuzzleId) => currentPuzzleId + 1);
     setSelectedCell(null);
     setUserEntries({});
     setMistakes(0);
+    setCompletedNumberNotification(null);
+    previousCompletedNumbers.current = new Set();
+
+    if (unlockedDifficultyLabel && onUnlockedGameRestart) {
+      onUnlockedGameRestart();
+      return;
+    }
+
     onGameRestart();
   };
 
@@ -163,6 +203,8 @@ const SudokuBoard = ({
     setSelectedCell(null);
     setUserEntries({});
     setMistakes(0);
+    setCompletedNumberNotification(null);
+    previousCompletedNumbers.current = new Set();
     onGameRestart();
   };
 
@@ -253,7 +295,7 @@ const SudokuBoard = ({
                     {isCompletedNumber
                       ? "\u2713"
                       : numberPadOption === "delete"
-                      ? "X"
+                      ? <span className={styles.deleteIcon}>X</span>
                       : numberPadOption}
                   </button>
                 );
@@ -358,6 +400,11 @@ const SudokuBoard = ({
     <article className={styles.sudoku}>
       <div className={styles.boardStack}>
         {renderStatusRow()}
+        {completedNumberNotification !== null && (
+          <div className={styles.completedNumberToast} role="status">
+            {completedNumberNotification} completed
+          </div>
+        )}
         <div className={styles.board} aria-label="Sudoku board">
           {solutionRows.map((row, iRow) => (
             <div className={styles.row} key={iRow}>
@@ -409,9 +456,17 @@ const SudokuBoard = ({
       {isGameOver && (
         <GameEndOverlay
           result={hasWon ? "win" : "lose"}
-          title={hasWon ? "Solved!" : "Game over"}
+          title={
+            hasWon && unlockedDifficultyLabel
+              ? `${unlockedDifficultyLabel} unlocked \uD83D\uDD13`
+              : hasWon
+              ? "Solved!"
+              : "Game over"
+          }
           message={
-            hasWon
+            hasWon && unlockedDifficultyLabel
+              ? "Your next game will start there."
+              : hasWon
               ? "The puzzle is complete."
               : "Three mistakes ends this round."
           }

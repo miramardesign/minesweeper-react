@@ -50,7 +50,7 @@ const gameOptions: Array<{
   {
     id: "sudoku",
     title: "Sudoku",
-    description: "A fresh puzzle board is coming next.",
+    description: "You favorite decoding game",
   },
 ];
 
@@ -97,6 +97,16 @@ const getIsSudokuDifficultyUnlocked = (
   );
 };
 
+const getNextSudokuDifficulty = (difficulty: SudokuDifficulty) => {
+  const difficultyIndex = sudokuDifficultyOrder.indexOf(difficulty);
+
+  return sudokuDifficultyOrder[difficultyIndex + 1] ?? null;
+};
+
+const getSudokuDifficultyLabel = (difficulty: SudokuDifficulty) =>
+  sudokuOptions.find((option) => option.id === difficulty)?.label ??
+  difficulty;
+
 function App() {
   const [selectedGame, setSelectedGame] = useState<GameChoice>("launcher");
   const [selectedMinesweeperType, setSelectedMinesweeperType] =
@@ -106,19 +116,24 @@ function App() {
   const [sudokuProgress, setSudokuProgress] = useState<SudokuProgress>(
     getSavedSudokuProgress
   );
+  const [unlockedSudokuDifficulty, setUnlockedSudokuDifficulty] =
+    useState<SudokuDifficulty | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [isBackConfirmOpen, setIsBackConfirmOpen] = useState(false);
   const selectedGameRef = useRef(selectedGame);
   const selectedSudokuDifficultyRef = useRef(selectedSudokuDifficulty);
+  const sudokuProgressRef = useRef(sudokuProgress);
 
   selectedGameRef.current = selectedGame;
   selectedSudokuDifficultyRef.current = selectedSudokuDifficulty;
+  sudokuProgressRef.current = sudokuProgress;
 
   useEffect(() => {
     setElapsedSeconds(0);
     setIsTimerRunning(selectedGame !== "launcher");
     setIsBackConfirmOpen(false);
+    setUnlockedSudokuDifficulty(null);
   }, [selectedGame]);
 
   useEffect(() => {
@@ -142,27 +157,50 @@ function App() {
     }
 
     if (selectedGameRef.current === "sudoku") {
-      setSudokuProgress((currentProgress) => {
-        const nextProgress = {
-          ...currentProgress,
-          [selectedSudokuDifficultyRef.current]:
-            currentProgress[selectedSudokuDifficultyRef.current] + 1,
-        };
+      const currentDifficulty = selectedSudokuDifficultyRef.current;
+      const currentProgress = sudokuProgressRef.current;
+      const nextProgress = {
+        ...currentProgress,
+        [currentDifficulty]: currentProgress[currentDifficulty] + 1,
+      };
+      const nextDifficulty = getNextSudokuDifficulty(currentDifficulty);
+      const unlockRequirement =
+        sudokuWinsToUnlockNextDifficulty[currentDifficulty];
 
-        window.localStorage.setItem(
-          sudokuProgressStorageKey,
-          JSON.stringify(nextProgress)
-        );
+      if (
+        nextDifficulty &&
+        currentProgress[currentDifficulty] < unlockRequirement &&
+        nextProgress[currentDifficulty] >= unlockRequirement
+      ) {
+        setUnlockedSudokuDifficulty(nextDifficulty);
+      } else {
+        setUnlockedSudokuDifficulty(null);
+      }
 
-        return nextProgress;
-      });
+      sudokuProgressRef.current = nextProgress;
+      window.localStorage.setItem(
+        sudokuProgressStorageKey,
+        JSON.stringify(nextProgress)
+      );
+      setSudokuProgress(nextProgress);
     }
   }, []);
 
   const handleGameRestart = useCallback(() => {
     setElapsedSeconds(0);
     setIsTimerRunning(true);
+    setUnlockedSudokuDifficulty(null);
   }, []);
+
+  const handleUnlockedSudokuRestart = useCallback(() => {
+    if (unlockedSudokuDifficulty) {
+      setSelectedSudokuDifficulty(unlockedSudokuDifficulty);
+    }
+
+    setElapsedSeconds(0);
+    setIsTimerRunning(true);
+    setUnlockedSudokuDifficulty(null);
+  }, [unlockedSudokuDifficulty]);
 
   const handleConfirmBack = () => {
     setIsBackConfirmOpen(false);
@@ -216,8 +254,14 @@ function App() {
         <section className="placeholder-page" aria-label="Sudoku">
           <SudokuBoard
             difficulty={selectedSudokuDifficulty}
+            unlockedDifficultyLabel={
+              unlockedSudokuDifficulty
+                ? getSudokuDifficultyLabel(unlockedSudokuDifficulty)
+                : undefined
+            }
             onGameEnd={handleGameEnd}
             onGameRestart={handleGameRestart}
+            onUnlockedGameRestart={handleUnlockedSudokuRestart}
           />
         </section>
       );
