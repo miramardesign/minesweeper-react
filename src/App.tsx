@@ -301,11 +301,17 @@ function App() {
                         ]
                       : 0;
                     const lockedMessage = `Complete ${unlockRequirement} games on the previous Sudoku difficulty to unlock.`;
+                    const isUnlockedSudokuOption =
+                      isSudokuOption && !isLocked;
 
                     return (
                       <button
                         aria-label={
-                          isLocked ? `${option.label} locked. ${lockedMessage}` : option.label
+                          isLocked
+                            ? `${option.label} locked. ${lockedMessage}`
+                            : isUnlockedSudokuOption
+                            ? `${option.label} unlocked`
+                            : option.label
                         }
                         className="basic game-option-button"
                         disabled={isLocked}
@@ -333,6 +339,11 @@ function App() {
                           <span className="game-option-lock" aria-hidden="true">
                             {" "}
                             {"\uD83D\uDD12"}
+                          </span>
+                        ) : isUnlockedSudokuOption ? (
+                          <span className="game-option-lock" aria-hidden="true">
+                            {" "}
+                            {"\uD83D\uDD13"}
                           </span>
                         ) : null}
                       </button>

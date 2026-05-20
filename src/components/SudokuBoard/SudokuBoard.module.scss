@@ -254,6 +254,13 @@
   border-color: #646cff;
 }
 
+.selectedNumberButton,
+.selectedNumberButton:hover {
+  border-color: #9fb8ff;
+  background: #9fb8ff;
+  color: #0f2747;
+}
+
 .numberButton:disabled {
   border-color: var(--sudoku-keypad-border);
   cursor: not-allowed;

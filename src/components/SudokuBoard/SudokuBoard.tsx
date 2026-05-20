@@ -94,6 +94,9 @@ const SudokuBoard = ({
     iRow: number;
     iCol: number;
   } | null>(null);
+  const [selectedKeypadNumber, setSelectedKeypadNumber] = useState<
+    number | null
+  >(null);
   const [userEntries, setUserEntries] = useState<UserEntries>({});
   const [mistakes, setMistakes] = useState(0);
   const [completedNumberNotification, setCompletedNumberNotification] =
@@ -186,6 +189,7 @@ const SudokuBoard = ({
   const resetPuzzle = () => {
     setPuzzleId((currentPuzzleId) => currentPuzzleId + 1);
     setSelectedCell(null);
+    setSelectedKeypadNumber(null);
     setUserEntries({});
     setMistakes(0);
     setCompletedNumberNotification(null);
@@ -201,6 +205,7 @@ const SudokuBoard = ({
 
   const redoPuzzle = () => {
     setSelectedCell(null);
+    setSelectedKeypadNumber(null);
     setUserEntries({});
     setMistakes(0);
     setCompletedNumberNotification(null);
@@ -274,6 +279,9 @@ const SudokuBoard = ({
                 const isCompletedNumber =
                   typeof numberPadOption === "number" &&
                   completedNumbers.has(numberPadOption);
+                const isSelectedKeypadNumber =
+                  typeof numberPadOption === "number" &&
+                  numberPadOption === selectedKeypadNumber;
 
                 return (
                   <button
@@ -282,11 +290,24 @@ const SudokuBoard = ({
                         ? "Delete selected Sudoku cell"
                         : isCompletedNumber
                         ? `${numberPadOption} completed`
+                        : isSelectedKeypadNumber
+                        ? `${numberPadOption} selected`
                         : `Enter ${numberPadOption}`
+                    }
+                    aria-pressed={
+                      typeof numberPadOption === "number"
+                        ? isSelectedKeypadNumber
+                        : undefined
                     }
                     className={`${styles.numberButton} ${
                       numberPadOption === "delete" ? styles.deleteButton : ""
-                    } ${isCompletedNumber ? styles.completedNumberButton : ""}`}
+                    } ${
+                      isCompletedNumber ? styles.completedNumberButton : ""
+                    } ${
+                      isSelectedKeypadNumber
+                        ? styles.selectedNumberButton
+                        : ""
+                    }`}
                     disabled={isCompletedNumber}
                     key={numberPadOption}
                     onClick={() => handleNumberPadClick(numberPadOption)}
@@ -343,6 +364,15 @@ const SudokuBoard = ({
     }
 
     setSelectedCell({ iRow, iCol });
+
+    const cellKey = getCellKey(iRow, iCol);
+    const displayValue = givenCells.has(cellKey)
+      ? solutionRows[iRow][iCol]
+      : userEntries[cellKey]?.value;
+
+    if (displayValue !== undefined) {
+      setSelectedKeypadNumber(displayValue);
+    }
   };
 
   const handleNumberPadClick = (numberPadOption: NumberPadOption) => {
@@ -369,6 +399,8 @@ const SudokuBoard = ({
       });
       return;
     }
+
+    setSelectedKeypadNumber(numberPadOption);
 
     const isCorrect =
       solutionRows[selectedCell.iRow][selectedCell.iCol] === numberPadOption;
