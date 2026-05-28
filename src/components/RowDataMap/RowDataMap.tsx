@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { CellData } from "../../types/mineTypes";
 import MineCell from "../MineCell/MineCell";
 

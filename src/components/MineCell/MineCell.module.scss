@@ -1,11 +1,17 @@
 
 
 .square {
-    display: inline-block;
+    position: relative;
+    display: inline-grid;
+    place-items: center;
     width: 40px;
     height: 40px;
+    padding: 0;
     cursor: pointer;
     font-size: 24px;
+    line-height: 1;
+    vertical-align: top;
+    overflow: hidden;
     border-radius: 0;
     border: 2px solid black;
     border-top-color: grey;
@@ -64,18 +70,39 @@
     }
   }
   
+  .square::before,
   .square::after {
-    content: "\00a0";
-  
+    box-sizing: border-box;
+    line-height: 1;
+  }
+
+  .square::after {
+    content: "";
     color: green;
   }
   
   .square.mark-flag {
     cursor: no-drop;
-  
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 9px;
+      left: 17px;
+      width: 2px;
+      height: 22px;
+      background: #7f1d1d;
+    }
+
     &::after {
-      content: "\1F6A9";
-      color: red;
+      content: "";
+      position: absolute;
+      top: 8px;
+      left: 18px;
+      width: 15px;
+      height: 12px;
+      clip-path: polygon(0 0, 100% 18%, 0 56%);
+      background: #dc2626;
     }
   }
   

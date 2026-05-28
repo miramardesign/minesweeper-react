@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { CellData } from "../../types/mineTypes";
 import styles from "./MineCell.module.scss";
 

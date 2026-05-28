@@ -25,9 +25,26 @@
   overflow-x: hidden;
 }
 
+.App-sudoku-portrait {
+  padding-top: calc(0.25rem + 12px);
+  border: 1px solid greenyellow;
+}
+
+.App-sudoku-landscape {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
+  width: 100vw;
+  min-height: 100dvh;
+  padding: 0;
+  overflow: hidden;
+  padding-right: 24px;
+}
+
 .game-header {
   display: grid;
-  grid-template-columns: minmax(52px, 1fr) auto minmax(72px, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.5rem;
   margin: 0.75rem 0 1.5rem;
@@ -35,8 +52,51 @@
 }
 
 .game-header h1 {
+  justify-self: start;
   margin: 0;
   font-size: clamp(1.75rem, 8vw, 2.25rem);
+  text-align: left;
+}
+
+.game-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.game-title-icon {
+  font-size: 0.78em;
+  line-height: 1;
+}
+
+.game-header-sudoku-landscape {
+  grid-column: 1;
+  grid-row: 1;
+  grid-template-columns: 24px minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-content: start;
+  justify-items: center;
+  gap: 0.55rem 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.game-header-sudoku-landscape h1 {
+  grid-column: 2;
+  justify-self: start;
+  width: 100%;
+  font-size: 1.2rem;
+  line-height: 1.1;
+  text-align: left;
+}
+
+.game-header-sudoku-landscape .header-back-button {
+  width: 24px;
+  height: 34px;
+  font-size: 2rem;
+  transform: none;
 }
 
 .header-back-button {
@@ -59,7 +119,6 @@
 }
 
 .header-timer {
-  justify-self: end;
   min-width: 72px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
@@ -67,6 +126,56 @@
   background: #0f2747;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
+}
+
+.header-timer-wrap {
+  display: flex;
+  justify-self: end;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.game-header-sudoku-landscape .header-timer-wrap {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: center;
+  gap: 0.5rem;
+}
+
+.game-header-sudoku-landscape .header-timer {
+  display: none;
+}
+
+.header-reset-button,
+.header-layout-button {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0;
+  background: #0f2747;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.header-layout-button .bi {
+  display: block;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.header-reset-button .bi {
+  display: block;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.header-reset-button:hover,
+.header-layout-button:hover {
+  border-color: #646cff;
 }
 
 .game-launcher {
@@ -146,6 +255,12 @@
   place-items: center;
 }
 
+.placeholder-page-sudoku-landscape {
+  grid-column: 2;
+  min-height: 0;
+  place-items: stretch;
+}
+
 .confirm-back-overlay {
   position: fixed;
   inset: 0;
@@ -196,7 +311,9 @@
     color: #5f6673;
   }
 
-  .header-timer {
+  .header-timer,
+  .header-reset-button,
+  .header-layout-button {
     border-color: rgba(33, 53, 71, 0.16);
     background: #f9f9f9;
   }

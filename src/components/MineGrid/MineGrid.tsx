@@ -3,27 +3,34 @@ import styles from "./MineGrid.module.scss";
 import {
   getMineData,
   goTurn,
-  onLoseCondition,
   resetGrid,
   setCellMark,
 } from "../../utils/mineSetup";
 import { GameStateDisplay } from "../../types/mineTypes";
 import { GameSizes } from "../../utils/mineSetupData";
-import DigitalDisplay from "../DigitalDisplay/DigitalDisplay";
-import DigitalDisplayCountup from "../DigitalDisplayCountup/DigitalDisplayCountup";
 import { GameContext, initialState } from "../../contexts/GameProvider";
 import { GameActionType } from "../../types/state";
 import GameEndOverlay from "../GameEndOverlay/GameEndOverlay";
-import GameStateButton from "../GameStateButton/GameStateButton";
 import MineDataMap from "../MineDataMap/MineDataMap";
 
 type MineGridProps = {
+  unlockedDifficultyLabel?: string;
   onGameEnd: (result: "win" | "lose") => void;
   onGameRestart: () => void;
+  onUnlockedGameRestart?: () => void;
 };
 
-const MineGrid = ({ onGameEnd, onGameRestart }: MineGridProps) => {
+const getDisplayText = (value: string) =>
+  value.charAt(0).toUpperCase() + value.slice(1);
+
+const MineGrid = ({
+  unlockedDifficultyLabel,
+  onGameEnd,
+  onGameRestart,
+  onUnlockedGameRestart,
+}: MineGridProps) => {
   const { state, dispatch } = useContext(GameContext);
+  const minesRemaining = GameSizes[state.gridSize].mines - state.flagsPlaced;
 
   useEffect(() => {
     if (!state.isGameOver) {
@@ -79,19 +86,15 @@ const MineGrid = ({ onGameEnd, onGameRestart }: MineGridProps) => {
   };
 
   /**
-   * when the timer countup says we are out of time.
-   * @param msg
-   */
-  const handleTimeout = (msg: string) => {
-    console.log(msg);
-    onLoseCondition(-1, -1, state.mineData, dispatch);
-  };
-
-  /**
    * smiley face / frowny face clicked.
    * @param e event of clicked element.
    */
   const handleOnClickResetGrid = () => {
+    if (unlockedDifficultyLabel && onUnlockedGameRestart) {
+      onUnlockedGameRestart();
+      return;
+    }
+
     const localState = { ...initialState, gridSize: state.gridSize };
     resetGrid(dispatch, localState);
     onGameRestart();
@@ -107,26 +110,11 @@ const MineGrid = ({ onGameEnd, onGameRestart }: MineGridProps) => {
       */}
       {/* minedata olde, ineffecting placing mech.  {JSON.stringify(state.mineDataOlde)} */}
 
-      <article id="wrap-row-digital-display-reset">
-        <DigitalDisplay
-          id={"mines-remaining"}
-          displayNum={GameSizes[state.gridSize].mines - state.flagsPlaced}
-        ></DigitalDisplay>
-        <br />
-        <GameStateButton
-          gameStateDisplay={state.gameStateDisplay}
-          resetGrid={handleOnClickResetGrid}
-        />
+      <div className={styles.statusRow}>
+        <span>Difficulty: {getDisplayText(state.gridSize)}</span>
+        <span>Mines Remaining: {minesRemaining}</span>
+      </div>
 
-        <DigitalDisplayCountup
-          id={"time-counter"}
-          timeoutCount={handleTimeout}
-          startCount={state.isGameStarted}
-          gameOver={state.isGameOver}
-        />
-      </article>
-      <br />
-      <hr className={styles.break} />
       <article className={styles.boardWrap}>
         <MineDataMap
           mineData={state.mineData}
@@ -138,10 +126,18 @@ const MineGrid = ({ onGameEnd, onGameRestart }: MineGridProps) => {
       {state.isGameOver && (
         <GameEndOverlay
           result={state.isLost ? "lose" : "win"}
-          title={state.isLost ? "Boom!" : "You won!"}
+          title={
+            !state.isLost && unlockedDifficultyLabel
+              ? `${unlockedDifficultyLabel} unlocked \uD83D\uDD13`
+              : state.isLost
+              ? "Boom!"
+              : "You won!"
+          }
           message={
             state.isLost
               ? "That square was hiding a mine."
+              : unlockedDifficultyLabel
+              ? "Your next game will start there."
               : "Every safe square is clear."
           }
           onPlayAgain={handleOnClickResetGrid}

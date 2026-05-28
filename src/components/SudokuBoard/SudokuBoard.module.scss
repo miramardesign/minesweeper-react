@@ -2,15 +2,108 @@
   --sudoku-cell-size: clamp(34px, calc((100vw - 18px) / 9), 40px);
   --sudoku-keypad-bg: #0f2747;
   --sudoku-keypad-border: rgba(255, 255, 255, 0.2);
-  --sudoku-keypad-delete-color: #ffb7b7;
-  --sudoku-keypad-delete-icon-bg: #ffb7b7;
-  --sudoku-keypad-delete-icon-text: #0f2747;
 
   display: grid;
   justify-items: center;
   gap: 1.5rem;
   width: 100%;
+  min-height: calc(100dvh - 96px);
   overflow-x: hidden;
+}
+
+.sudoku:not(.sudokuLandscape) {
+  align-content: start;
+  gap: 0;
+}
+
+.sudokuPortraitKeypadBelow {
+  grid-template-rows: auto auto;
+}
+
+.sudokuPortraitKeypadBelow .boardStack {
+  order: 1;
+}
+
+.sudokuPortraitKeypadBelow .keypadStack {
+  order: 2;
+  min-height: clamp(136px, 28dvh, 220px);
+}
+
+.sudokuPortraitKeypadAbove {
+  grid-template-rows: auto auto;
+  gap: 0;
+}
+
+.sudokuPortraitKeypadAbove .keypadStack {
+  order: 1;
+  min-height: clamp(136px, 28dvh, 220px);
+}
+
+.sudokuPortraitKeypadAbove .boardStack {
+  order: 2;
+}
+
+.sudokuLandscape {
+  --sudoku-cell-size: clamp(28px, min(calc((100vw - 316px) / 9), calc((100dvh - 6px) / 9)), 54px);
+
+  align-items: center;
+  justify-content: start;
+  column-gap: 0;
+  height: 100dvh;
+  padding-right: 24px;
+  overflow: hidden;
+}
+
+.sudokuLandscapeKeypadRight {
+  grid-template-columns: auto minmax(252px, 1fr);
+}
+
+.sudokuLandscapeKeypadRight .boardStack {
+  order: 1;
+}
+
+.sudokuLandscapeKeypadRight .keypadStack {
+  order: 2;
+}
+
+.sudokuLandscapeKeypadRight .keypadDragLayer {
+  justify-self: end;
+}
+
+.sudokuLandscapeKeypadMiddle {
+  grid-template-columns: auto minmax(252px, 1fr);
+}
+
+.sudokuLandscapeKeypadMiddle .boardStack {
+  order: 1;
+}
+
+.sudokuLandscapeKeypadMiddle .keypadStack {
+  order: 2;
+}
+
+.sudokuLandscapeKeypadMiddle .keypadDragLayer {
+  justify-self: center;
+}
+
+.sudokuLandscapeKeypadLeft {
+  grid-template-columns: minmax(252px, 1fr) auto;
+}
+
+.sudokuLandscapeKeypadLeft .keypadStack {
+  order: 1;
+}
+
+.sudokuLandscapeKeypadLeft .boardStack {
+  order: 2;
+}
+
+.sudokuLandscapeKeypadLeft .keypadDragLayer {
+  justify-self: start;
+}
+
+.sudokuLandscape .boardStack {
+  justify-self: start;
 }
 
 .boardStack {
@@ -37,10 +130,12 @@
 }
 
 .board {
+  position: relative;
   display: inline-grid;
   grid-template-rows: repeat(9, var(--sudoku-cell-size));
   border: 3px solid #111;
   background: #111;
+  overflow: hidden;
 }
 
 .row {
@@ -72,6 +167,11 @@
 .selectedCell,
 .selectedCell:hover {
   background: #9fb8ff;
+}
+
+.selectedCompletedCell,
+.selectedCompletedCell:hover {
+  background: #88d9a1;
 }
 
 .givenCell {
@@ -115,124 +215,248 @@
   border-right-width: 0;
 }
 
+.boardSwapHint {
+  position: absolute;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgba(159, 184, 255, 0.95);
+  background: rgba(15, 39, 71, 0.78);
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.boardSwapHint .bi {
+  font-size: clamp(2rem, 13vw, 3.5rem);
+  line-height: 1;
+}
+
+.boardSwapHintTop,
+.boardSwapHintBottom {
+  left: 0;
+  width: 100%;
+  height: 33.333%;
+}
+
+.boardSwapHintTop {
+  top: 0;
+}
+
+.boardSwapHintBottom {
+  bottom: 0;
+}
+
+.boardSwapHintLeft,
+.boardSwapHintRight {
+  top: 0;
+  width: 33.333%;
+  height: 100%;
+}
+
+.boardSwapHintLeft {
+  left: 0;
+}
+
+.boardSwapHintRight {
+  right: 0;
+}
+
 .statusRow {
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: clamp(2rem, 10vw, 4.5rem);
   font-weight: 700;
 }
 
+.statusDifficulty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.statusDifficultyText {
+  display: inline;
+}
+
+.statusDifficultyIcon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.mistakesRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  line-height: 1;
+}
+
+.mistakeMark {
+  color: #a8adb7;
+  font-size: 1rem;
+}
+
+.usedMistakeMark {
+  color: #ee8f8f;
+}
+
+.sudokuLandscape .statusRow {
+  position: fixed;
+  left: 11px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 42px;
+  gap: 0.35rem;
+  pointer-events: none;
+}
+
+.sudokuLandscape .statusDifficulty {
+  display: inline-flex;
+}
+
+.sudokuLandscape .statusDifficultyText {
+  display: none;
+}
+
+.sudokuLandscape .mistakesRow {
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .numberPad {
   display: grid;
-  grid-column: 2;
   justify-items: center;
   gap: 0.8rem;
-  transition: transform 0.2s ease;
+  border-radius: 8px;
+  padding: 0.5rem;
+  background: rgba(15, 39, 71, 0.9);
+  outline: 2px solid rgb(255, 0, 0);
+  outline-offset: 2px;
 }
 
 .keypadStack {
   display: grid;
-  justify-items: center;
-  gap: 0.45rem;
+  align-items: start;
+  justify-items: stretch;
+  min-height: clamp(170px, 28dvh, 250px);
   width: 100%;
-  transition: margin-top 0.2s ease;
+  outline: 2px solid rgb(0, 0, 255);
+  outline-offset: -2px;
 }
 
-.keypadStackStep0 {
+.sudokuLandscape .keypadStack {
+  align-self: stretch;
+  align-items: stretch;
+  align-content: center;
+  justify-self: stretch;
+  min-height: 0;
+  height: 100%;
   margin-top: 0;
-}
-
-.keypadStackStep1 {
-  margin-top: 1rem;
-}
-
-.keypadStackStep2 {
-  margin-top: 2rem;
-}
-
-.keypadStackStep3 {
-  margin-top: calc(3rem + 20px);
+  gap: 0.5rem;
+  padding-block: 0.5rem;
 }
 
 .keypadWrap {
+  position: relative;
   display: grid;
-  grid-template-columns: 44px auto 44px;
   align-items: center;
   justify-content: center;
-  column-gap: 0.35rem;
+  justify-items: center;
   width: 100%;
+  outline: 2px solid rgb(0, 255, 0);
+  outline-offset: -4px;
 }
 
-.numberPadRight {
-  transform: translateX(24px);
+.sudokuLandscape .keypadWrap {
+  align-items: center;
+  justify-content: stretch;
+  justify-self: start;
+  width: calc(100% - 32px);
 }
 
-.numberPadLeft {
-  transform: translateX(-24px);
+.sharedVideoPanel {
+  display: none;
 }
 
-.keypadShiftButton {
-  width: 42px;
-  height: 64px;
+.sudokuLandscape .sharedVideoPanel {
+  display: block;
+  justify-self: center;
+  width: min(100% - 32px, 360px);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
   border: 1px solid var(--sudoku-keypad-border);
   border-radius: 8px;
-  padding: 0;
-  color: inherit;
-  background: var(--sudoku-keypad-bg);
-  cursor: pointer;
-  font-size: 2.5rem;
-  line-height: 1;
+  background: rgba(15, 39, 71, 0.9);
 }
 
-.keypadShiftButton:hover {
-  border-color: #646cff;
+.sharedVideoPanel iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 
-.keypadVerticalButton {
+.keypadDragLayer {
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  transition: transform 0.18s ease;
+  will-change: transform;
+  outline: 2px solid rgb(255, 255, 0);
+  outline-offset: 6px;
+}
+
+.keypadDragLayer * {
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+}
+
+.keypadDragging {
+  cursor: grabbing;
+  transition: none;
+  z-index: 42;
+}
+
+.keypadMoveHint {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   display: grid;
   place-items: center;
-  width: 64px;
-  height: 30px;
+  align-content: center;
+  gap: 0.3rem;
   border: 1px solid var(--sudoku-keypad-border);
   border-radius: 8px;
-  padding: 0;
-  color: inherit;
-  background: var(--sudoku-keypad-bg);
-  cursor: pointer;
-  font-size: 2.25rem;
+  background: rgba(15, 39, 71, 0.14);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.1;
+  pointer-events: none;
+}
+
+.keypadMoveHint .bi {
+  font-size: 1.5rem;
   line-height: 1;
 }
 
-.chevronUp,
-.chevronDown {
-  display: inline-block;
-  line-height: 1;
-}
-
-.chevronUp {
-  transform: translateX(2px) rotate(90deg);
-}
-
-.chevronDown {
-  transform: translateX(-2px) rotate(-90deg);
-}
-
-.keypadVerticalButton:hover {
-  border-color: #646cff;
-}
-
-.keypadShiftLeft {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.keypadShiftRight {
-  grid-column: 3;
-  grid-row: 1;
+.keypadMoveHint .bi,
+.keypadMoveHint span {
+  border-radius: 8px;
+  padding: 0.2rem 0.35rem;
+  background: rgba(15, 39, 71, 0.78);
 }
 
 .numberPadRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 48px);
   justify-content: center;
   gap: clamp(0.75rem, 3vw, 1.15rem);
 }
@@ -271,33 +495,53 @@
   color: #7ff0a0;
 }
 
-.deleteButton {
-  color: var(--sudoku-keypad-delete-color);
-}
+@media (max-width: 680px) {
+  .sudokuLandscape {
+    --sudoku-cell-size: clamp(24px, min(calc((100vw - 270px) / 9), calc((100dvh - 6px) / 9)), 40px);
 
-.deleteIcon {
-  display: inline-grid;
-  place-items: center;
-  width: 30px;
-  height: 20px;
-  padding-left: 4px;
-  clip-path: polygon(22% 0, 100% 0, 100% 100%, 22% 100%, 0 50%);
-  background: var(--sudoku-keypad-delete-icon-bg);
-  color: var(--sudoku-keypad-delete-icon-text);
-  font-size: 0.85rem;
-  line-height: 1;
+    column-gap: 0;
+  }
+
+  .sudokuLandscapeKeypadRight {
+    grid-template-columns: auto minmax(206px, 1fr);
+  }
+
+  .sudokuLandscapeKeypadMiddle {
+    grid-template-columns: auto minmax(206px, 1fr);
+  }
+
+  .sudokuLandscapeKeypadLeft {
+    grid-template-columns: minmax(206px, 1fr) auto;
+  }
+
+  .sudokuLandscape .statusRow {
+    gap: 0.35rem;
+    font-size: 0.85rem;
+  }
+
+  .sudokuLandscape .numberButton {
+    width: 44px;
+    height: 40px;
+  }
+
+  .sudokuLandscape .numberPadRow {
+    grid-template-columns: repeat(3, 44px);
+    gap: 0.35rem;
+  }
 }
 
 @media (prefers-color-scheme: light) {
   .sudoku {
     --sudoku-keypad-bg: #f9f9f9;
     --sudoku-keypad-border: #c7ced8;
-    --sudoku-keypad-delete-color: #b42318;
-    --sudoku-keypad-delete-icon-bg: #b42318;
-    --sudoku-keypad-delete-icon-text: #ffffff;
   }
 
   .completedNumberButton {
     color: #146c2e;
+  }
+
+  .selectedCompletedCell,
+  .selectedCompletedCell:hover {
+    background: #a7e5b9;
   }
 }

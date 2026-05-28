@@ -10,51 +10,96 @@ import {
   playWrongAnswerSound,
 } from "../../utils/soundEffects";
 import GameEndOverlay from "../GameEndOverlay/GameEndOverlay";
+import SudokuKeypad, { NumberPadOption } from "./SudokuKeypad";
 import styles from "./SudokuBoard.module.scss";
 
-type NumberPadOption = "delete" | number;
 type UserCell = {
   value: number;
   isCorrect: boolean;
 };
 type UserEntries = Record<string, UserCell>;
-type KeypadPosition = "left" | "center" | "right";
-type KeypadVerticalPosition = 0 | 1 | 2 | 3;
-
-const numberPadRows = [
-  [1, 2, 3, 4, 5],
-  [6, 7, 8, 9, "delete"],
-] as NumberPadOption[][];
-const keypadPositionStorageKey = "sudoku-keypad-position";
-const keypadVerticalPositionStorageKey = "sudoku-keypad-vertical-position";
-const keypadVerticalPositions: KeypadVerticalPosition[] = [0, 1, 2, 3];
+type PortraitKeypadPlacement = number;
+type LandscapeKeypadPlacement = "left" | "middle" | "right";
+type KeypadPlacement = {
+  portrait: PortraitKeypadPlacement;
+  landscape: LandscapeKeypadPlacement;
+};
 
 const getCellKey = (iRow: number, iCol: number) => `${iRow}-${iCol}`;
 const getDisplayText = (value: string) =>
   value.charAt(0).toUpperCase() + value.slice(1);
-const getSavedKeypadPosition = (): KeypadPosition => {
-  const savedPosition = window.localStorage.getItem(keypadPositionStorageKey);
-
-  return savedPosition === "left" ||
-    savedPosition === "center" ||
-    savedPosition === "right"
-    ? savedPosition
-    : "center";
+const sudokuDifficultyIconClass: Record<SudokuDifficulty, string> = {
+  easy: "bi-reception-1",
+  medium: "bi-reception-2",
+  hard: "bi-reception-3",
+  expert: "bi-reception-4",
 };
-const getSavedKeypadVerticalPosition = (): KeypadVerticalPosition => {
-  const savedPosition = Number(
-    window.localStorage.getItem(keypadVerticalPositionStorageKey)
-  );
+const isSameSudokuBox = (
+  firstCell: { iRow: number; iCol: number },
+  secondCell: { iRow: number; iCol: number }
+) =>
+  Math.floor(firstCell.iRow / 3) === Math.floor(secondCell.iRow / 3) &&
+  Math.floor(firstCell.iCol / 3) === Math.floor(secondCell.iCol / 3);
+const keypadPlacementStorageKey = "sudoku-keypad-placement-v2";
+const portraitAboveSnapZoneCount = 6;
+const defaultKeypadPlacement: KeypadPlacement = {
+  portrait: portraitAboveSnapZoneCount,
+  landscape: "right",
+};
 
-  return keypadVerticalPositions.includes(
-    savedPosition as KeypadVerticalPosition
-  )
-    ? (savedPosition as KeypadVerticalPosition)
-    : 1;
+const getSavedPortraitPlacement = (
+  portraitPlacement: Partial<KeypadPlacement>["portrait"] | "top" | "middle" | "bottom"
+): PortraitKeypadPlacement => {
+  if (
+    typeof portraitPlacement === "number" &&
+    Number.isInteger(portraitPlacement)
+  ) {
+    return portraitPlacement < portraitAboveSnapZoneCount
+      ? portraitAboveSnapZoneCount - 1
+      : portraitAboveSnapZoneCount;
+  }
+
+  if (portraitPlacement === "top") {
+    return portraitAboveSnapZoneCount - 1;
+  }
+
+  if (portraitPlacement === "middle") {
+    return portraitAboveSnapZoneCount;
+  }
+
+  return defaultKeypadPlacement.portrait;
+};
+
+const getSavedKeypadPlacement = (): KeypadPlacement => {
+  const savedPlacement = window.localStorage.getItem(keypadPlacementStorageKey);
+
+  if (!savedPlacement) {
+    return defaultKeypadPlacement;
+  }
+
+  try {
+    const parsedPlacement = JSON.parse(savedPlacement) as Partial<KeypadPlacement> & {
+      portrait?: PortraitKeypadPlacement | "top" | "middle" | "bottom";
+    };
+
+    return {
+      portrait: getSavedPortraitPlacement(parsedPlacement.portrait),
+      landscape:
+        parsedPlacement.landscape === "left" ||
+        parsedPlacement.landscape === "middle" ||
+        parsedPlacement.landscape === "right"
+          ? parsedPlacement.landscape
+          : defaultKeypadPlacement.landscape,
+    };
+  } catch {
+    return defaultKeypadPlacement;
+  }
 };
 
 type SudokuBoardProps = {
   difficulty: SudokuDifficulty;
+  isLandscape?: boolean;
+  sharedYouTubeEmbedUrl?: string | null;
   unlockedDifficultyLabel?: string;
   onGameEnd: (result: "win" | "lose") => void;
   onGameRestart: () => void;
@@ -76,6 +121,8 @@ const getGivenCells = (givenCount: number) => {
 
 const SudokuBoard = ({
   difficulty,
+  isLandscape = false,
+  sharedYouTubeEmbedUrl = null,
   unlockedDifficultyLabel,
   onGameEnd,
   onGameRestart,
@@ -101,13 +148,15 @@ const SudokuBoard = ({
   const [mistakes, setMistakes] = useState(0);
   const [completedNumberNotification, setCompletedNumberNotification] =
     useState<number | null>(null);
-  const [keypadPosition, setKeypadPosition] =
-    useState<KeypadPosition>(getSavedKeypadPosition);
-  const [keypadVerticalPosition, setKeypadVerticalPosition] = useState(
-    getSavedKeypadVerticalPosition
+  const [isKeypadDragging, setIsKeypadDragging] = useState(false);
+  const [keypadPlacement, setKeypadPlacement] = useState(
+    getSavedKeypadPlacement
   );
   const hasReportedGameEnd = useRef(false);
+  const previousIsLandscape = useRef(isLandscape);
   const previousCompletedNumbers = useRef<Set<number>>(new Set());
+  const lastTappedCell = useRef<{ cellKey: string; time: number } | null>(null);
+  const clearedCellClick = useRef<string | null>(null);
   const hiddenCellCount = 81 - givenCells.size;
   const correctEntryCount = Object.values(userEntries).filter(
     (entry) => entry.isCorrect
@@ -154,17 +203,6 @@ const SudokuBoard = ({
   }, [hasWon, isGameOver, onGameEnd]);
 
   useEffect(() => {
-    window.localStorage.setItem(keypadPositionStorageKey, keypadPosition);
-  }, [keypadPosition]);
-
-  useEffect(() => {
-    window.localStorage.setItem(
-      keypadVerticalPositionStorageKey,
-      keypadVerticalPosition.toString()
-    );
-  }, [keypadVerticalPosition]);
-
-  useEffect(() => {
     const newlyCompletedNumber = Array.from(completedNumbers).find(
       (completedNumber) =>
         !previousCompletedNumbers.current.has(completedNumber)
@@ -185,6 +223,32 @@ const SudokuBoard = ({
 
     return () => window.clearTimeout(notificationTimer);
   }, [completedNumbers]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      keypadPlacementStorageKey,
+      JSON.stringify(keypadPlacement)
+    );
+  }, [keypadPlacement]);
+
+  useEffect(() => {
+    if (previousIsLandscape.current === isLandscape) {
+      return;
+    }
+
+    previousIsLandscape.current = isLandscape;
+    setKeypadPlacement((currentPlacement) =>
+      isLandscape
+        ? {
+            ...currentPlacement,
+            landscape: defaultKeypadPlacement.landscape,
+          }
+        : {
+            ...currentPlacement,
+            portrait: defaultKeypadPlacement.portrait,
+          }
+    );
+  }, [isLandscape]);
 
   const resetPuzzle = () => {
     setPuzzleId((currentPuzzleId) => currentPuzzleId + 1);
@@ -215,163 +279,98 @@ const SudokuBoard = ({
 
   const renderStatusRow = () => (
     <div className={styles.statusRow}>
-      <span>Difficulty: {getDisplayText(difficulty)}</span>
-      <span>Mistakes {mistakes}/3</span>
+      <span
+        aria-label={`Difficulty: ${getDisplayText(difficulty)}`}
+        className={styles.statusDifficulty}
+      >
+        <span className={styles.statusDifficultyText}>
+          Difficulty: {getDisplayText(difficulty)}
+        </span>
+        <i
+          aria-hidden="true"
+          className={`bi ${sudokuDifficultyIconClass[difficulty]} ${styles.statusDifficultyIcon}`}
+        />
+      </span>
+      <span
+        aria-label={`${mistakes} of 3 mistakes used`}
+        className={styles.mistakesRow}
+      >
+        {Array.from({ length: 3 }, (_, index) => (
+          <i
+            aria-hidden="true"
+            className={`bi bi-x-lg ${styles.mistakeMark} ${
+              index < mistakes ? styles.usedMistakeMark : ""
+            }`}
+            key={index}
+          />
+        ))}
+      </span>
     </div>
   );
 
-  const moveKeypadUp = () => {
-    setKeypadVerticalPosition((currentPosition) =>
-      Math.max(0, currentPosition - 1) as KeypadVerticalPosition
-    );
+  const clearIncorrectEntry = (iRow: number, iCol: number) => {
+    if (isGameOver) {
+      return false;
+    }
+
+    const cellKey = getCellKey(iRow, iCol);
+    const userEntry = userEntries[cellKey];
+
+    if (userEntry?.isCorrect !== false) {
+      return false;
+    }
+
+    setUserEntries((currentEntries) => {
+      const nextEntries = { ...currentEntries };
+      delete nextEntries[cellKey];
+      return nextEntries;
+    });
+
+    setSelectedCell({ iRow, iCol });
+    setSelectedKeypadNumber(null);
+    return true;
   };
-
-  const moveKeypadDown = () => {
-    setKeypadVerticalPosition((currentPosition) =>
-      Math.min(3, currentPosition + 1) as KeypadVerticalPosition
-    );
-  };
-
-  const renderKeypad = () => (
-    <div
-      className={`${styles.keypadStack} ${
-        styles[`keypadStackStep${keypadVerticalPosition}`]
-      }`}
-    >
-      {keypadVerticalPosition > 0 && (
-        <button
-          aria-label="Move number pad up"
-          className={styles.keypadVerticalButton}
-          onClick={moveKeypadUp}
-          type="button"
-        >
-          <span className={styles.chevronUp}>{"\u2039"}</span>
-        </button>
-      )}
-
-      <div className={styles.keypadWrap}>
-        {keypadPosition !== "left" && (
-          <button
-            aria-label={
-              keypadPosition === "center"
-                ? "Move number pad left"
-                : "Move number pad to center"
-            }
-            className={`${styles.keypadShiftButton} ${styles.keypadShiftLeft}`}
-            onClick={() =>
-              setKeypadPosition(keypadPosition === "center" ? "left" : "center")
-            }
-            type="button"
-          >
-            {"\u2039"}
-          </button>
-        )}
-
-        <div
-          className={`${styles.numberPad} ${
-            keypadPosition === "right" ? styles.numberPadRight : ""
-          } ${keypadPosition === "left" ? styles.numberPadLeft : ""}`}
-          aria-label="Sudoku number pad"
-        >
-          {numberPadRows.map((row) => (
-            <div className={styles.numberPadRow} key={row.join("-")}>
-              {row.map((numberPadOption) => {
-                const isCompletedNumber =
-                  typeof numberPadOption === "number" &&
-                  completedNumbers.has(numberPadOption);
-                const isSelectedKeypadNumber =
-                  typeof numberPadOption === "number" &&
-                  numberPadOption === selectedKeypadNumber;
-
-                return (
-                  <button
-                    aria-label={
-                      numberPadOption === "delete"
-                        ? "Delete selected Sudoku cell"
-                        : isCompletedNumber
-                        ? `${numberPadOption} completed`
-                        : isSelectedKeypadNumber
-                        ? `${numberPadOption} selected`
-                        : `Enter ${numberPadOption}`
-                    }
-                    aria-pressed={
-                      typeof numberPadOption === "number"
-                        ? isSelectedKeypadNumber
-                        : undefined
-                    }
-                    className={`${styles.numberButton} ${
-                      numberPadOption === "delete" ? styles.deleteButton : ""
-                    } ${
-                      isCompletedNumber ? styles.completedNumberButton : ""
-                    } ${
-                      isSelectedKeypadNumber
-                        ? styles.selectedNumberButton
-                        : ""
-                    }`}
-                    disabled={isCompletedNumber}
-                    key={numberPadOption}
-                    onClick={() => handleNumberPadClick(numberPadOption)}
-                    type="button"
-                  >
-                    {isCompletedNumber
-                      ? "\u2713"
-                      : numberPadOption === "delete"
-                      ? <span className={styles.deleteIcon}>X</span>
-                      : numberPadOption}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-
-        {keypadPosition !== "right" && (
-          <button
-            aria-label={
-              keypadPosition === "center"
-                ? "Move number pad right"
-                : "Move number pad to center"
-            }
-            className={`${styles.keypadShiftButton} ${styles.keypadShiftRight}`}
-            onClick={() =>
-              setKeypadPosition(
-                keypadPosition === "center" ? "right" : "center"
-              )
-            }
-            type="button"
-          >
-            {"\u203A"}
-          </button>
-        )}
-      </div>
-
-      {keypadVerticalPosition < 3 && (
-        <button
-          aria-label="Move number pad down"
-          className={styles.keypadVerticalButton}
-          onClick={moveKeypadDown}
-          type="button"
-        >
-          <span className={styles.chevronDown}>{"\u2039"}</span>
-        </button>
-      )}
-    </div>
-  );
 
   const handleCellClick = (iRow: number, iCol: number) => {
+    const cellKey = getCellKey(iRow, iCol);
+
+    if (clearedCellClick.current === cellKey) {
+      clearedCellClick.current = null;
+      return;
+    }
+
     if (isGameOver) {
       return;
     }
 
     setSelectedCell({ iRow, iCol });
 
-    const cellKey = getCellKey(iRow, iCol);
     const displayValue = givenCells.has(cellKey)
       ? solutionRows[iRow][iCol]
       : userEntries[cellKey]?.value;
 
     if (displayValue !== undefined) {
       setSelectedKeypadNumber(displayValue);
+    }
+  };
+
+  const handleCellPointerUp = (iRow: number, iCol: number) => {
+    const cellKey = getCellKey(iRow, iCol);
+    const currentTime = Date.now();
+    const previousTap = lastTappedCell.current;
+    const isDoubleTap =
+      previousTap?.cellKey === cellKey && currentTime - previousTap.time < 350;
+
+    lastTappedCell.current = { cellKey, time: currentTime };
+
+    if (!isDoubleTap) {
+      return;
+    }
+
+    lastTappedCell.current = null;
+
+    if (clearIncorrectEntry(iRow, iCol)) {
+      clearedCellClick.current = cellKey;
     }
   };
 
@@ -391,32 +390,48 @@ const SudokuBoard = ({
       return;
     }
 
-    if (numberPadOption === "delete") {
-      setUserEntries((currentEntries) => {
-        const nextEntries = { ...currentEntries };
-        delete nextEntries[cellKey];
-        return nextEntries;
-      });
-      return;
-    }
-
     setSelectedKeypadNumber(numberPadOption);
 
     const isCorrect =
       solutionRows[selectedCell.iRow][selectedCell.iCol] === numberPadOption;
 
-    setUserEntries((currentEntries) => ({
-      ...currentEntries,
-      [cellKey]: {
-        value: numberPadOption,
-        isCorrect,
-      },
-    }));
+    setUserEntries((currentEntries) => {
+      const nextEntries = {
+        ...currentEntries,
+        [cellKey]: {
+          value: numberPadOption,
+          isCorrect,
+        },
+      };
+
+      if (isCorrect) {
+        Object.entries(currentEntries).forEach(([entryCellKey, entry]) => {
+          if (entry.value !== numberPadOption || entry.isCorrect) {
+            return;
+          }
+
+          const [entryRow, entryCol] = entryCellKey.split("-").map(Number);
+
+          if (
+            entryCellKey !== cellKey &&
+            isSameSudokuBox(selectedCell, { iRow: entryRow, iCol: entryCol })
+          ) {
+            delete nextEntries[entryCellKey];
+          }
+        });
+      }
+
+      return nextEntries;
+    });
 
     if (!isCorrect) {
       playWrongAnswerSound();
       setMistakes((currentMistakes) => currentMistakes + 1);
     }
+  };
+
+  const handleCellDoubleClick = (iRow: number, iCol: number) => {
+    clearIncorrectEntry(iRow, iCol);
   };
 
   const selectedCellKey = selectedCell
@@ -427,9 +442,55 @@ const SudokuBoard = ({
       ? solutionRows[selectedCell.iRow][selectedCell.iCol]
       : userEntries[selectedCellKey!]?.value
     : undefined;
+  const isPortraitKeypadAbove =
+    keypadPlacement.portrait < portraitAboveSnapZoneCount;
+  const keypadPlacementClass = isLandscape
+    ? keypadPlacement.landscape === "left"
+      ? styles.sudokuLandscapeKeypadLeft
+      : keypadPlacement.landscape === "middle"
+      ? styles.sudokuLandscapeKeypadMiddle
+      : styles.sudokuLandscapeKeypadRight
+    : keypadPlacement.portrait < portraitAboveSnapZoneCount
+    ? styles.sudokuPortraitKeypadAbove
+    : styles.sudokuPortraitKeypadBelow;
+  const boardSwapHintClass = isLandscape
+    ? keypadPlacement.landscape === "left"
+      ? styles.boardSwapHintLeft
+      : styles.boardSwapHintRight
+    : isPortraitKeypadAbove
+    ? styles.boardSwapHintTop
+    : styles.boardSwapHintBottom;
+  const boardSwapHintIconClass = isLandscape
+    ? keypadPlacement.landscape === "left"
+      ? "bi-arrow-right"
+      : "bi-arrow-left"
+    : isPortraitKeypadAbove
+    ? "bi-arrow-down"
+    : "bi-arrow-up";
+
+  const handleKeypadPlacementChange = (
+    nextPlacement: PortraitKeypadPlacement | LandscapeKeypadPlacement,
+    placementIsLandscape: boolean
+  ) => {
+    setKeypadPlacement((currentPlacement) =>
+      placementIsLandscape
+        ? {
+            ...currentPlacement,
+            landscape: nextPlacement as LandscapeKeypadPlacement,
+          }
+        : {
+            ...currentPlacement,
+            portrait: nextPlacement as PortraitKeypadPlacement,
+          }
+    );
+  };
 
   return (
-    <article className={styles.sudoku}>
+    <article
+      className={`${styles.sudoku} ${
+        isLandscape ? styles.sudokuLandscape : ""
+      } ${keypadPlacementClass}`}
+    >
       <div className={styles.boardStack}>
         {renderStatusRow()}
         {completedNumberNotification !== null && (
@@ -449,6 +510,9 @@ const SudokuBoard = ({
                 const displayValue = isGiven
                   ? solutionRows[iRow][iCol]
                   : userEntry?.value;
+                const isCompletedDisplayValue =
+                  displayValue !== undefined &&
+                  completedNumbers.has(displayValue);
                 const matchesSelectedValue =
                   selectedDisplayValue !== undefined &&
                   displayValue === selectedDisplayValue;
@@ -465,6 +529,10 @@ const SudokuBoard = ({
                     className={`${styles.cell} ${
                       isHighlighted ? styles.highlightedCell : ""
                     } ${isSelected ? styles.selectedCell : ""} ${
+                      isSelected && isCompletedDisplayValue
+                        ? styles.selectedCompletedCell
+                        : ""
+                    } ${
                       isGiven ? styles.givenCell : ""
                     } ${
                       userEntry?.isCorrect === true ? styles.correctCell : ""
@@ -473,6 +541,8 @@ const SudokuBoard = ({
                     }`}
                     key={iCol}
                     onClick={() => handleCellClick(iRow, iCol)}
+                    onDoubleClick={() => handleCellDoubleClick(iRow, iCol)}
+                    onPointerUp={() => handleCellPointerUp(iRow, iCol)}
                     type="button"
                   >
                     {displayValue}
@@ -481,9 +551,27 @@ const SudokuBoard = ({
               })}
             </div>
           ))}
+          {isKeypadDragging && (
+            <div
+              aria-hidden="true"
+              className={`${styles.boardSwapHint} ${boardSwapHintClass}`}
+            >
+              <i className={`bi ${boardSwapHintIconClass}`} />
+            </div>
+          )}
         </div>
       </div>
-      {renderKeypad()}
+      <SudokuKeypad
+        completedNumbers={completedNumbers}
+        isLandscape={isLandscape}
+        landscapePlacement={keypadPlacement.landscape}
+        portraitIsAbove={isPortraitKeypadAbove}
+        sharedYouTubeEmbedUrl={sharedYouTubeEmbedUrl}
+        selectedKeypadNumber={selectedKeypadNumber}
+        onDragChange={setIsKeypadDragging}
+        onPlacementChange={handleKeypadPlacementChange}
+        onNumberPadClick={handleNumberPadClick}
+      />
 
       {isGameOver && (
         <GameEndOverlay
