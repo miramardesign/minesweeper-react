@@ -43,6 +43,8 @@ type KeypadPosition = {
   left: number;
   top: number;
 };
+type KeypadOrientation = "portrait" | "landscape";
+type KeypadDroppedPositions = Record<KeypadOrientation, KeypadPosition | null>;
 
 const getBoardRect = () =>
   document
@@ -178,8 +180,11 @@ const SudokuKeypad = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragPreviewPosition, setDragPreviewPosition] =
     useState<KeypadPosition | null>(null);
-  const [droppedPosition, setDroppedPosition] =
-    useState<KeypadPosition | null>(null);
+  const [droppedPositions, setDroppedPositions] =
+    useState<KeypadDroppedPositions>({
+      landscape: null,
+      portrait: null,
+    });
   const [showMoveHint, setShowMoveHint] = useState(true);
   const keypadDragLayerRef = useRef<HTMLDivElement | null>(null);
   const longPressTimer = useRef<number | null>(null);
@@ -189,6 +194,10 @@ const SudokuKeypad = ({
     grabY: number;
   } | null>(null);
   const shouldSuppressClick = useRef(false);
+  const keypadOrientation: KeypadOrientation = isLandscape
+    ? "landscape"
+    : "portrait";
+  const droppedPosition = droppedPositions[keypadOrientation];
 
   useEffect(() => {
     const hintTimer = window.setTimeout(() => {
@@ -207,10 +216,6 @@ const SudokuKeypad = ({
   }, []);
 
   useEffect(() => {
-    setDroppedPosition(null);
-  }, [isLandscape]);
-
-  useEffect(() => {
     if (!droppedPosition) {
       return;
     }
@@ -222,11 +227,16 @@ const SudokuKeypad = ({
         return;
       }
 
-      setDroppedPosition((currentPosition) =>
-        currentPosition
-          ? clampKeypadPosition(currentPosition, keypadRect, isLandscape)
-          : currentPosition
-      );
+      setDroppedPositions((currentPositions) => {
+        const currentPosition = currentPositions[keypadOrientation];
+
+        return {
+          ...currentPositions,
+          [keypadOrientation]: currentPosition
+            ? clampKeypadPosition(currentPosition, keypadRect, isLandscape)
+            : currentPosition,
+        };
+      });
     };
 
     window.addEventListener("resize", clampDroppedPosition);
@@ -244,7 +254,7 @@ const SudokuKeypad = ({
         clampDroppedPosition
       );
     };
-  }, [droppedPosition]);
+  }, [droppedPosition, isLandscape, keypadOrientation]);
 
   const startLongPressTimer = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) {
@@ -335,9 +345,15 @@ const SudokuKeypad = ({
           ),
           isLandscape
         );
-        setDroppedPosition(null);
+        setDroppedPositions((currentPositions) => ({
+          ...currentPositions,
+          [keypadOrientation]: null,
+        }));
       } else if (dragPreviewPosition) {
-        setDroppedPosition(dragPreviewPosition);
+        setDroppedPositions((currentPositions) => ({
+          ...currentPositions,
+          [keypadOrientation]: dragPreviewPosition,
+        }));
       }
 
       keypadDragLayerRef.current?.releasePointerCapture(event.pointerId);

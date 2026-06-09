@@ -153,7 +153,6 @@ const SudokuBoard = ({
     getSavedKeypadPlacement
   );
   const hasReportedGameEnd = useRef(false);
-  const previousIsLandscape = useRef(isLandscape);
   const previousCompletedNumbers = useRef<Set<number>>(new Set());
   const lastTappedCell = useRef<{ cellKey: string; time: number } | null>(null);
   const clearedCellClick = useRef<string | null>(null);
@@ -230,25 +229,6 @@ const SudokuBoard = ({
       JSON.stringify(keypadPlacement)
     );
   }, [keypadPlacement]);
-
-  useEffect(() => {
-    if (previousIsLandscape.current === isLandscape) {
-      return;
-    }
-
-    previousIsLandscape.current = isLandscape;
-    setKeypadPlacement((currentPlacement) =>
-      isLandscape
-        ? {
-            ...currentPlacement,
-            landscape: defaultKeypadPlacement.landscape,
-          }
-        : {
-            ...currentPlacement,
-            portrait: defaultKeypadPlacement.portrait,
-          }
-    );
-  }, [isLandscape]);
 
   const resetPuzzle = () => {
     setPuzzleId((currentPuzzleId) => currentPuzzleId + 1);
