@@ -1,6 +1,8 @@
 import "./App.css";
 import MineGrid from "./components/MineGrid/MineGrid";
-import SudokuBoard from "./components/SudokuBoard/SudokuBoard";
+import SudokuBoard, {
+  type SavedSudokuGame,
+} from "./components/SudokuBoard/SudokuBoard";
 import { registerPlugin } from "@capacitor/core";
 import type { PluginListenerHandle } from "@capacitor/core";
 import { ScreenOrientation } from "@capacitor/screen-orientation";
@@ -66,6 +68,7 @@ const sudokuWinsToUnlockNextDifficulty: SudokuProgress = {
   expert: 20,
 };
 const sudokuProgressStorageKey = "sudoku-progression";
+const unfinishedSudokuGameStorageKey = "sudoku-unfinished-game-v1";
 const defaultSudokuProgress: SudokuProgress = {
   easy: 0,
   medium: 0,
@@ -113,6 +116,81 @@ const getSavedSudokuProgress = (): SudokuProgress => {
   } catch {
     return defaultSudokuProgress;
   }
+};
+
+const isSavedSudokuDifficulty = (difficulty: unknown): difficulty is SudokuDifficulty =>
+  typeof difficulty === "string" &&
+  sudokuDifficultyOrder.includes(difficulty as SudokuDifficulty);
+
+const isSavedSudokuGrid = (grid: unknown): grid is number[][] =>
+  Array.isArray(grid) &&
+  grid.length === 9 &&
+  grid.every(
+    (row) =>
+      Array.isArray(row) &&
+      row.length === 9 &&
+      row.every((value) => Number.isInteger(value) && value >= 1 && value <= 9)
+  );
+
+const getSavedUnfinishedSudokuGame = (): SavedSudokuGame | null => {
+  const savedGame = window.localStorage.getItem(unfinishedSudokuGameStorageKey);
+
+  if (!savedGame) {
+    return null;
+  }
+
+  try {
+    const parsedGame = JSON.parse(savedGame) as Partial<SavedSudokuGame>;
+
+    if (
+      !isSavedSudokuDifficulty(parsedGame.difficulty) ||
+      !isSavedSudokuGrid(parsedGame.solutionRows) ||
+      !Array.isArray(parsedGame.givenCellKeys) ||
+      typeof parsedGame.userEntries !== "object" ||
+      parsedGame.userEntries === null ||
+      typeof parsedGame.mistakes !== "number" ||
+      typeof parsedGame.elapsedSeconds !== "number" ||
+      typeof parsedGame.updatedAt !== "string"
+    ) {
+      return null;
+    }
+
+    return {
+      difficulty: parsedGame.difficulty,
+      elapsedSeconds: Math.max(0, Math.floor(parsedGame.elapsedSeconds)),
+      givenCellKeys: parsedGame.givenCellKeys.filter(
+        (cellKey): cellKey is string => typeof cellKey === "string"
+      ),
+      mistakes: Math.max(0, Math.min(3, Math.floor(parsedGame.mistakes))),
+      solutionRows: parsedGame.solutionRows,
+      updatedAt: parsedGame.updatedAt,
+      userEntries: parsedGame.userEntries,
+    };
+  } catch {
+    return null;
+  }
+};
+
+const getSavedSudokuGameAgeLabel = (updatedAt: string) => {
+  const updatedTime = new Date(updatedAt).getTime();
+
+  if (Number.isNaN(updatedTime)) {
+    return "unfinished game";
+  }
+
+  const elapsedDays = Math.floor(
+    (Date.now() - updatedTime) / (1000 * 60 * 60 * 24)
+  );
+
+  if (elapsedDays <= 0) {
+    return "played today";
+  }
+
+  if (elapsedDays === 1) {
+    return "played yesterday";
+  }
+
+  return `played ${elapsedDays} days ago`;
 };
 
 const getSavedMinesweeperProgress = (): MinesweeperProgress => {
@@ -257,6 +335,11 @@ function App() {
   const [sudokuProgress, setSudokuProgress] = useState<SudokuProgress>(
     getSavedSudokuProgress
   );
+  const [savedSudokuGame, setSavedSudokuGame] = useState<SavedSudokuGame | null>(
+    getSavedUnfinishedSudokuGame
+  );
+  const [initialSudokuGame, setInitialSudokuGame] =
+    useState<SavedSudokuGame | null>(null);
   const [unlockedMinesweeperDifficulty, setUnlockedMinesweeperDifficulty] =
     useState<GameTypesKeys | null>(null);
   const [unlockedSudokuDifficulty, setUnlockedSudokuDifficulty] =
@@ -278,6 +361,7 @@ function App() {
   const selectedSudokuDifficultyRef = useRef(selectedSudokuDifficulty);
   const minesweeperProgressRef = useRef(minesweeperProgress);
   const sudokuProgressRef = useRef(sudokuProgress);
+  const pendingSudokuResumeRef = useRef<SavedSudokuGame | null>(null);
 
   selectedGameRef.current = selectedGame;
   selectedMinesweeperTypeRef.current = selectedMinesweeperType;
@@ -286,7 +370,14 @@ function App() {
   sudokuProgressRef.current = sudokuProgress;
 
   useEffect(() => {
-    setElapsedSeconds(0);
+    const pendingSudokuResume = pendingSudokuResumeRef.current;
+
+    setElapsedSeconds(
+      selectedGame === "sudoku" && pendingSudokuResume
+        ? pendingSudokuResume.elapsedSeconds
+        : 0
+    );
+    pendingSudokuResumeRef.current = null;
     setIsTimerRunning(selectedGame !== "launcher");
     setIsBackConfirmOpen(false);
     setIsResetConfirmOpen(false);
@@ -419,6 +510,10 @@ function App() {
     }
 
     if (selectedGameRef.current === "sudoku") {
+      window.localStorage.removeItem(unfinishedSudokuGameStorageKey);
+      setSavedSudokuGame(null);
+      setInitialSudokuGame(null);
+
       const currentDifficulty = selectedSudokuDifficultyRef.current;
       const currentProgress = sudokuProgressRef.current;
       const nextProgress = {
@@ -478,11 +573,51 @@ function App() {
   }, []);
 
   const handleGameRestart = useCallback(() => {
+    setInitialSudokuGame(null);
     setElapsedSeconds(0);
     setIsTimerRunning(true);
     setUnlockedMinesweeperDifficulty(null);
     setUnlockedSudokuDifficulty(null);
   }, []);
+
+  const handleSudokuProgressSave = useCallback(
+    (savedGame: SavedSudokuGame | null) => {
+      if (!savedGame) {
+        window.localStorage.removeItem(unfinishedSudokuGameStorageKey);
+        setSavedSudokuGame(null);
+        return;
+      }
+
+      window.localStorage.setItem(
+        unfinishedSudokuGameStorageKey,
+        JSON.stringify(savedGame)
+      );
+      setSavedSudokuGame(savedGame);
+    },
+    []
+  );
+
+  const startNewSudokuGame = (difficulty: SudokuDifficulty) => {
+    window.localStorage.removeItem(unfinishedSudokuGameStorageKey);
+    pendingSudokuResumeRef.current = null;
+    setSavedSudokuGame(null);
+    setInitialSudokuGame(null);
+    setSelectedSudokuDifficulty(difficulty);
+    setGameResetKey((currentKey) => currentKey + 1);
+    setSelectedGame("sudoku");
+  };
+
+  const continueSavedSudokuGame = () => {
+    if (!savedSudokuGame) {
+      return;
+    }
+
+    pendingSudokuResumeRef.current = savedSudokuGame;
+    setInitialSudokuGame(savedSudokuGame);
+    setSelectedSudokuDifficulty(savedSudokuGame.difficulty);
+    setGameResetKey((currentKey) => currentKey + 1);
+    setSelectedGame("sudoku");
+  };
 
   const handleUnlockedMinesweeperRestart = useCallback(() => {
     if (unlockedMinesweeperDifficulty) {
@@ -499,6 +634,7 @@ function App() {
       setSelectedSudokuDifficulty(unlockedSudokuDifficulty);
     }
 
+    setInitialSudokuGame(null);
     setElapsedSeconds(0);
     setIsTimerRunning(true);
     setUnlockedSudokuDifficulty(null);
@@ -511,6 +647,7 @@ function App() {
 
   const handleConfirmReset = () => {
     setIsResetConfirmOpen(false);
+    setInitialSudokuGame(null);
     setElapsedSeconds(0);
     setIsTimerRunning(true);
     setUnlockedMinesweeperDifficulty(null);
@@ -629,6 +766,8 @@ function App() {
         >
           <SudokuBoard
             difficulty={selectedSudokuDifficulty}
+            elapsedSeconds={elapsedSeconds}
+            initialSavedGame={initialSudokuGame}
             isLandscape={isSudokuLandscape}
             key={`sudoku-${gameResetKey}-${selectedSudokuDifficulty}`}
             sharedYouTubeEmbedUrl={sharedYouTubeEmbedUrl}
@@ -639,6 +778,7 @@ function App() {
             }
             onGameEnd={handleGameEnd}
             onGameRestart={handleGameRestart}
+            onProgressSave={handleSudokuProgressSave}
             onUnlockedGameRestart={handleUnlockedSudokuRestart}
           />
         </section>
@@ -657,6 +797,19 @@ function App() {
               <article className="game-card" key={game.id}>
               <span>{game.title}</span>
               <small>{game.description}</small>
+                {game.id === "sudoku" && savedSudokuGame && (
+                  <button
+                    className="basic continue-game-button"
+                    onClick={continueSavedSudokuGame}
+                    type="button"
+                  >
+                    <span>Continue game</span>
+                    <small>
+                      {getSudokuDifficultyLabel(savedSudokuGame.difficulty)} ·{" "}
+                      {getSavedSudokuGameAgeLabel(savedSudokuGame.updatedAt)}
+                    </small>
+                  </button>
+                )}
                 <div className="game-option-list">
                   {gameSetupOptions.map((option) => {
                     const isMinesweeperOption = game.id === "minesweeper";
@@ -715,13 +868,10 @@ function App() {
                             setSelectedMinesweeperType(
                               option.id as GameTypesKeys
                             );
+                            setSelectedGame(game.id);
                           } else {
-                            setSelectedSudokuDifficulty(
-                              option.id as SudokuDifficulty
-                            );
+                            startNewSudokuGame(option.id as SudokuDifficulty);
                           }
-
-                          setSelectedGame(game.id);
                         }}
                         title={
                           isLocked ? lockedMessage : undefined
@@ -756,7 +906,7 @@ function App() {
     <div
       className={`App ${
         selectedGame === "sudoku" && !isSudokuLandscape
-          ? "App-sudoku-portrait"
+          ? "App-sudoku-portrait debugGreenYellow"
           : ""
       } ${isSudokuLandscape ? "App-sudoku-landscape" : ""}`}
     >

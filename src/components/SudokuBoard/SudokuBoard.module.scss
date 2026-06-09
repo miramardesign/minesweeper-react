@@ -335,8 +335,6 @@
   border-radius: 8px;
   padding: 0.5rem;
   background: rgba(15, 39, 71, 0.9);
-  outline: 2px solid rgb(255, 0, 0);
-  outline-offset: 2px;
 }
 
 .keypadStack {
@@ -345,8 +343,6 @@
   justify-items: stretch;
   min-height: clamp(170px, 28dvh, 250px);
   width: 100%;
-  outline: 2px solid rgb(0, 0, 255);
-  outline-offset: -2px;
 }
 
 .sudokuLandscape .keypadStack {
@@ -368,8 +364,6 @@
   justify-content: center;
   justify-items: center;
   width: 100%;
-  outline: 2px solid rgb(0, 255, 0);
-  outline-offset: -4px;
 }
 
 .sudokuLandscape .keypadWrap {
@@ -409,6 +403,24 @@
   -webkit-user-select: none;
   transition: transform 0.18s ease;
   will-change: transform;
+}
+
+.debugRed {
+  outline: 2px solid rgb(255, 0, 0);
+  outline-offset: 2px;
+}
+
+.debugBlue {
+  outline: 2px solid rgb(0, 0, 255);
+  outline-offset: -2px;
+}
+
+.debugGreen {
+  outline: 2px solid rgb(0, 255, 0);
+  outline-offset: -4px;
+}
+
+.debugYellow {
   outline: 2px solid rgb(255, 255, 0);
   outline-offset: 6px;
 }

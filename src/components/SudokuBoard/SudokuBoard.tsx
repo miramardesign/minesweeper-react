@@ -18,6 +18,15 @@ type UserCell = {
   isCorrect: boolean;
 };
 type UserEntries = Record<string, UserCell>;
+export type SavedSudokuGame = {
+  difficulty: SudokuDifficulty;
+  elapsedSeconds: number;
+  givenCellKeys: string[];
+  mistakes: number;
+  solutionRows: SudokuGrid;
+  updatedAt: string;
+  userEntries: UserEntries;
+};
 type PortraitKeypadPlacement = number;
 type LandscapeKeypadPlacement = "left" | "middle" | "right";
 type KeypadPlacement = {
@@ -98,11 +107,14 @@ const getSavedKeypadPlacement = (): KeypadPlacement => {
 
 type SudokuBoardProps = {
   difficulty: SudokuDifficulty;
+  elapsedSeconds: number;
+  initialSavedGame?: SavedSudokuGame | null;
   isLandscape?: boolean;
   sharedYouTubeEmbedUrl?: string | null;
   unlockedDifficultyLabel?: string;
   onGameEnd: (result: "win" | "lose") => void;
   onGameRestart: () => void;
+  onProgressSave: (savedGame: SavedSudokuGame | null) => void;
   onUnlockedGameRestart?: () => void;
 };
 
@@ -121,21 +133,25 @@ const getGivenCells = (givenCount: number) => {
 
 const SudokuBoard = ({
   difficulty,
+  elapsedSeconds,
+  initialSavedGame = null,
   isLandscape = false,
   sharedYouTubeEmbedUrl = null,
   unlockedDifficultyLabel,
   onGameEnd,
   onGameRestart,
+  onProgressSave,
   onUnlockedGameRestart,
 }: SudokuBoardProps) => {
-  const [puzzleId, setPuzzleId] = useState(0);
-  const solutionRows: SudokuGrid = useMemo(
-    () => getRandomSudokuGrid(),
-    [puzzleId]
+  const [solutionRows, setSolutionRows] = useState<SudokuGrid>(
+    () => initialSavedGame?.solutionRows ?? getRandomSudokuGrid()
   );
-  const givenCells = useMemo(
-    () => getGivenCells(SudokuDifficultyGivenCounts[difficulty]),
-    [difficulty, puzzleId]
+  const [givenCells, setGivenCells] = useState<Set<string>>(
+    () =>
+      new Set(
+        initialSavedGame?.givenCellKeys ??
+          Array.from(getGivenCells(SudokuDifficultyGivenCounts[difficulty]))
+      )
   );
   const [selectedCell, setSelectedCell] = useState<{
     iRow: number;
@@ -144,8 +160,12 @@ const SudokuBoard = ({
   const [selectedKeypadNumber, setSelectedKeypadNumber] = useState<
     number | null
   >(null);
-  const [userEntries, setUserEntries] = useState<UserEntries>({});
-  const [mistakes, setMistakes] = useState(0);
+  const [userEntries, setUserEntries] = useState<UserEntries>(
+    () => initialSavedGame?.userEntries ?? {}
+  );
+  const [mistakes, setMistakes] = useState(
+    () => initialSavedGame?.mistakes ?? 0
+  );
   const [completedNumberNotification, setCompletedNumberNotification] =
     useState<number | null>(null);
   const [isKeypadDragging, setIsKeypadDragging] = useState(false);
@@ -202,6 +222,32 @@ const SudokuBoard = ({
   }, [hasWon, isGameOver, onGameEnd]);
 
   useEffect(() => {
+    if (isGameOver) {
+      onProgressSave(null);
+      return;
+    }
+
+    onProgressSave({
+      difficulty,
+      elapsedSeconds,
+      givenCellKeys: Array.from(givenCells),
+      mistakes,
+      solutionRows,
+      updatedAt: new Date().toISOString(),
+      userEntries,
+    });
+  }, [
+    difficulty,
+    elapsedSeconds,
+    givenCells,
+    isGameOver,
+    mistakes,
+    onProgressSave,
+    solutionRows,
+    userEntries,
+  ]);
+
+  useEffect(() => {
     const newlyCompletedNumber = Array.from(completedNumbers).find(
       (completedNumber) =>
         !previousCompletedNumbers.current.has(completedNumber)
@@ -231,7 +277,8 @@ const SudokuBoard = ({
   }, [keypadPlacement]);
 
   const resetPuzzle = () => {
-    setPuzzleId((currentPuzzleId) => currentPuzzleId + 1);
+    setSolutionRows(getRandomSudokuGrid());
+    setGivenCells(getGivenCells(SudokuDifficultyGivenCounts[difficulty]));
     setSelectedCell(null);
     setSelectedKeypadNumber(null);
     setUserEntries({});
@@ -248,6 +295,8 @@ const SudokuBoard = ({
   };
 
   const redoPuzzle = () => {
+    setSolutionRows(getRandomSudokuGrid());
+    setGivenCells(getGivenCells(SudokuDifficultyGivenCounts[difficulty]));
     setSelectedCell(null);
     setSelectedKeypadNumber(null);
     setUserEntries({});

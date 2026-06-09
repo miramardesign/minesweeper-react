@@ -376,7 +376,7 @@ const SudokuKeypad = ({
   };
 
   return (
-    <div className={styles.keypadStack}>
+    <div className={`${styles.keypadStack} ${styles.debugBlue}`}>
       {isLandscape && sharedYouTubeEmbedUrl && (
         <section className={styles.sharedVideoPanel} aria-label="Shared video">
           <iframe
@@ -387,9 +387,9 @@ const SudokuKeypad = ({
           />
         </section>
       )}
-      <div className={styles.keypadWrap}>
+      <div className={`${styles.keypadWrap} ${styles.debugGreen}`}>
         <div
-          className={`${styles.keypadDragLayer} ${
+          className={`${styles.keypadDragLayer} ${styles.debugYellow} ${
             isDragging ? styles.keypadDragging : ""
           }`}
           ref={keypadDragLayerRef}
@@ -420,7 +420,10 @@ const SudokuKeypad = ({
               : undefined
           }
         >
-          <div className={styles.numberPad} aria-label="Sudoku number pad">
+          <div
+            className={`${styles.numberPad} ${styles.debugRed}`}
+            aria-label="Sudoku number pad"
+          >
             {numberPadRows.map((row) => (
               <div className={styles.numberPadRow} key={row.join("-")}>
                 {row.map((numberPadOption) => {
