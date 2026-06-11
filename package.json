@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "android:sync": "npm run build && npx cap sync android",
     "android:debug": "npm run android:sync && cd android && powershell -NoProfile -ExecutionPolicy Bypass -Command \"$env:JAVA_HOME='C:\\Program Files\\Android\\Android Studio\\jbr'; .\\gradlew.bat assembleDebug\"",
+    "ios:sync": "npm run build && npx cap sync ios",
+    "ios:open": "npm run ios:sync && npx cap open ios",
     "apk": "npm run build && npx cap sync android && powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-android-device.ps1",
     "preview": "vite preview"
   },
@@ -15,6 +17,7 @@
     "@capacitor/android": "^8.3.4",
     "@capacitor/cli": "^8.3.4",
     "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.4.0",
     "@capacitor/screen-orientation": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
     "bootstrap-icons": "^1.13.1",

@@ -405,24 +405,30 @@
   will-change: transform;
 }
 
-.debugRed {
-  outline: 2px solid rgb(255, 0, 0);
-  outline-offset: 2px;
-}
+.debugTrue {
+  &.debugRed,
+  .debugRed {
+    outline: 2px solid rgb(255, 0, 0);
+    outline-offset: 2px;
+  }
 
-.debugBlue {
-  outline: 2px solid rgb(0, 0, 255);
-  outline-offset: -2px;
-}
+  &.debugBlue,
+  .debugBlue {
+    outline: 2px solid rgb(0, 0, 255);
+    outline-offset: -2px;
+  }
 
-.debugGreen {
-  outline: 2px solid rgb(0, 255, 0);
-  outline-offset: -4px;
-}
+  &.debugGreen,
+  .debugGreen {
+    outline: 2px solid rgb(0, 255, 0);
+    outline-offset: -4px;
+  }
 
-.debugYellow {
-  outline: 2px solid rgb(255, 255, 0);
-  outline-offset: 6px;
+  &.debugYellow,
+  .debugYellow {
+    outline: 2px solid rgb(255, 255, 0);
+    outline-offset: 6px;
+  }
 }
 
 .keypadDragLayer * {
@@ -441,17 +447,19 @@
   position: absolute;
   inset: 0;
   z-index: 3;
-  display: grid;
+  display: inline-grid;
+  place-self: center;
   place-items: center;
-  align-content: center;
   gap: 0.3rem;
-  border: 1px solid var(--sudoku-keypad-border);
+  border: 1px solid rgba(255, 255, 255, 0.36);
   border-radius: 8px;
-  background: rgba(15, 39, 71, 0.14);
+  padding: 0.55rem 0.75rem;
+  background: rgba(15, 39, 71, 0.92);
   color: #ffffff;
   font-size: 0.82rem;
   font-weight: 700;
   line-height: 1.1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
   pointer-events: none;
 }
 
@@ -462,28 +470,26 @@
 
 .keypadMoveHint .bi,
 .keypadMoveHint span {
-  border-radius: 8px;
-  padding: 0.2rem 0.35rem;
-  background: rgba(15, 39, 71, 0.78);
+  display: block;
 }
 
 .numberPadRow {
   display: grid;
-  grid-template-columns: repeat(3, 48px);
+  grid-template-columns: repeat(3, 52px);
   justify-content: center;
-  gap: clamp(0.75rem, 3vw, 1.15rem);
+  gap: calc(clamp(0.75rem, 3vw, 1.15rem) + 2px);
 }
 
 .numberButton {
-  width: 48px;
-  height: 44px;
+  width: 52px;
+  height: 48px;
   padding: 0;
   border: 1px solid var(--sudoku-keypad-border);
   border-radius: 8px;
   background: var(--sudoku-keypad-bg);
   color: inherit;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: calc(1.2rem + 2px);
   font-weight: 700;
 }
 
@@ -533,13 +539,13 @@
   }
 
   .sudokuLandscape .numberButton {
-    width: 44px;
-    height: 40px;
+    width: 48px;
+    height: 44px;
   }
 
   .sudokuLandscape .numberPadRow {
-    grid-template-columns: repeat(3, 44px);
-    gap: 0.35rem;
+    grid-template-columns: repeat(3, 48px);
+    gap: calc(0.35rem + 2px);
   }
 }
 

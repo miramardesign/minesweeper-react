@@ -11,6 +11,7 @@ export type NumberPadOption = number;
 
 type SudokuKeypadProps = {
   completedNumbers: Set<number>;
+  debugTrue?: boolean;
   isLandscape?: boolean;
   landscapePlacement: "left" | "middle" | "right";
   portraitIsAbove: boolean;
@@ -31,6 +32,8 @@ const numberPadRows = [
 ] as NumberPadOption[][];
 const longPressDelay = 500;
 const portraitAboveSnapZoneCount = 6;
+const keypadBoardGap = 8;
+const keypadBoardMaxOverlap = 14;
 const keypadViewportInset = {
   top: 50,
   right: 14,
@@ -38,6 +41,8 @@ const keypadViewportInset = {
   bottom: 50,
   left: 14,
 };
+const keypadDroppedPositionsStorageKey =
+  "sudoku-keypad-dropped-positions-v1";
 
 type KeypadPosition = {
   left: number;
@@ -45,11 +50,156 @@ type KeypadPosition = {
 };
 type KeypadOrientation = "portrait" | "landscape";
 type KeypadDroppedPositions = Record<KeypadOrientation, KeypadPosition | null>;
+type KeypadBounds = {
+  maxLeft: number;
+  maxTop: number;
+  minLeft: number;
+  minTop: number;
+};
+
+const defaultKeypadDroppedPositions: KeypadDroppedPositions = {
+  landscape: null,
+  portrait: null,
+};
+
+const getSavedKeypadPosition = (
+  position: unknown
+): KeypadPosition | null => {
+  if (
+    typeof position !== "object" ||
+    position === null ||
+    !("left" in position) ||
+    !("top" in position)
+  ) {
+    return null;
+  }
+
+  const { left, top } = position as Partial<KeypadPosition>;
+
+  return typeof left === "number" &&
+    Number.isFinite(left) &&
+    typeof top === "number" &&
+    Number.isFinite(top)
+    ? { left, top }
+    : null;
+};
+
+const getSavedKeypadDroppedPositions = (): KeypadDroppedPositions => {
+  const savedPositions = window.localStorage.getItem(
+    keypadDroppedPositionsStorageKey
+  );
+
+  if (!savedPositions) {
+    return defaultKeypadDroppedPositions;
+  }
+
+  try {
+    const parsedPositions = JSON.parse(savedPositions) as Partial<
+      Record<KeypadOrientation, unknown>
+    >;
+
+    return {
+      landscape: getSavedKeypadPosition(parsedPositions.landscape),
+      portrait: getSavedKeypadPosition(parsedPositions.portrait),
+    };
+  } catch {
+    return defaultKeypadDroppedPositions;
+  }
+};
 
 const getBoardRect = () =>
   document
     .querySelector('[aria-label="Sudoku board"]')
     ?.getBoundingClientRect();
+
+const getOverlapArea = (
+  position: KeypadPosition,
+  keypadRect: Pick<DOMRect, "width" | "height">,
+  boardRect: DOMRect
+) => {
+  const overlapWidth = Math.max(
+    0,
+    Math.min(position.left + keypadRect.width, boardRect.right) -
+      Math.max(position.left, boardRect.left)
+  );
+  const overlapHeight = Math.max(
+    0,
+    Math.min(position.top + keypadRect.height, boardRect.bottom) -
+      Math.max(position.top, boardRect.top)
+  );
+
+  return {
+    area: overlapWidth * overlapHeight,
+    height: overlapHeight,
+    width: overlapWidth,
+  };
+};
+
+const clampPositionToBounds = (
+  position: KeypadPosition,
+  bounds: KeypadBounds
+) => ({
+  left: Math.min(Math.max(position.left, bounds.minLeft), bounds.maxLeft),
+  top: Math.min(Math.max(position.top, bounds.minTop), bounds.maxTop),
+});
+
+const moveKeypadAwayFromBoard = (
+  position: KeypadPosition,
+  keypadRect: Pick<DOMRect, "width" | "height">,
+  boardRect: DOMRect,
+  bounds: KeypadBounds
+): KeypadPosition => {
+  const overlap = getOverlapArea(position, keypadRect, boardRect);
+
+  if (
+    overlap.width <= keypadBoardMaxOverlap ||
+    overlap.height <= keypadBoardMaxOverlap
+  ) {
+    return position;
+  }
+
+  const candidates = [
+    {
+      left: boardRect.left - keypadRect.width - keypadBoardGap,
+      top: position.top,
+    },
+    {
+      left: boardRect.right + keypadBoardGap,
+      top: position.top,
+    },
+    {
+      left: position.left,
+      top: boardRect.top - keypadRect.height - keypadBoardGap,
+    },
+    {
+      left: position.left,
+      top: boardRect.bottom + keypadBoardGap,
+    },
+  ].map((candidate) => clampPositionToBounds(candidate, bounds));
+
+  return candidates.reduce((bestCandidate, candidate) => {
+    const bestOverlap = getOverlapArea(
+      bestCandidate,
+      keypadRect,
+      boardRect
+    ).area;
+    const candidateOverlap = getOverlapArea(candidate, keypadRect, boardRect)
+      .area;
+
+    if (candidateOverlap !== bestOverlap) {
+      return candidateOverlap < bestOverlap ? candidate : bestCandidate;
+    }
+
+    const bestDistance =
+      Math.abs(bestCandidate.left - position.left) +
+      Math.abs(bestCandidate.top - position.top);
+    const candidateDistance =
+      Math.abs(candidate.left - position.left) +
+      Math.abs(candidate.top - position.top);
+
+    return candidateDistance < bestDistance ? candidate : bestCandidate;
+  }, candidates[0]);
+};
 
 const clampKeypadPosition = (
   position: KeypadPosition,
@@ -83,10 +233,18 @@ const clampKeypadPosition = (
         keypadViewportInset.bottom
     );
 
-  return {
-    left: Math.min(Math.max(position.left, viewportLeft), maxLeft),
-    top: Math.min(Math.max(position.top, viewportTop), maxTop),
+  const bounds = {
+    maxLeft,
+    maxTop,
+    minLeft: viewportLeft,
+    minTop: viewportTop,
   };
+  const clampedPosition = clampPositionToBounds(position, bounds);
+  const boardRect = getBoardRect();
+
+  return boardRect
+    ? moveKeypadAwayFromBoard(clampedPosition, keypadRect, boardRect, bounds)
+    : clampedPosition;
 };
 
 const isPointInsideRect = (
@@ -168,6 +326,7 @@ const getDropPlacement = (
 
 const SudokuKeypad = ({
   completedNumbers,
+  debugTrue = false,
   isLandscape = false,
   landscapePlacement,
   portraitIsAbove,
@@ -181,10 +340,7 @@ const SudokuKeypad = ({
   const [dragPreviewPosition, setDragPreviewPosition] =
     useState<KeypadPosition | null>(null);
   const [droppedPositions, setDroppedPositions] =
-    useState<KeypadDroppedPositions>({
-      landscape: null,
-      portrait: null,
-    });
+    useState<KeypadDroppedPositions>(getSavedKeypadDroppedPositions);
   const [showMoveHint, setShowMoveHint] = useState(true);
   const keypadDragLayerRef = useRef<HTMLDivElement | null>(null);
   const longPressTimer = useRef<number | null>(null);
@@ -216,6 +372,13 @@ const SudokuKeypad = ({
   }, []);
 
   useEffect(() => {
+    window.localStorage.setItem(
+      keypadDroppedPositionsStorageKey,
+      JSON.stringify(droppedPositions)
+    );
+  }, [droppedPositions]);
+
+  useEffect(() => {
     if (!droppedPosition) {
       return;
     }
@@ -239,6 +402,7 @@ const SudokuKeypad = ({
       });
     };
 
+    clampDroppedPosition();
     window.addEventListener("resize", clampDroppedPosition);
     window.visualViewport?.addEventListener("resize", clampDroppedPosition);
     window.visualViewport?.addEventListener("scroll", clampDroppedPosition);
@@ -376,7 +540,11 @@ const SudokuKeypad = ({
   };
 
   return (
-    <div className={`${styles.keypadStack} ${styles.debugBlue}`}>
+    <div
+      className={`${styles.keypadStack} ${
+        debugTrue ? styles.debugTrue : ""
+      } ${styles.debugBlue}`}
+    >
       {isLandscape && sharedYouTubeEmbedUrl && (
         <section className={styles.sharedVideoPanel} aria-label="Shared video">
           <iframe

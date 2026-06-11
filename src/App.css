@@ -328,7 +328,8 @@
   color: #ffb7b7;
 }
 
-.debugGreenYellow {
+.debugTrue.debugGreenYellow,
+.debugTrue .debugGreenYellow {
   border: 1px solid greenyellow;
 }
 

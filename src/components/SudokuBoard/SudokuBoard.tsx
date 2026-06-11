@@ -106,6 +106,7 @@ const getSavedKeypadPlacement = (): KeypadPlacement => {
 };
 
 type SudokuBoardProps = {
+  debugTrue?: boolean;
   difficulty: SudokuDifficulty;
   elapsedSeconds: number;
   initialSavedGame?: SavedSudokuGame | null;
@@ -132,6 +133,7 @@ const getGivenCells = (givenCount: number) => {
 };
 
 const SudokuBoard = ({
+  debugTrue = false,
   difficulty,
   elapsedSeconds,
   initialSavedGame = null,
@@ -592,6 +594,7 @@ const SudokuBoard = ({
       </div>
       <SudokuKeypad
         completedNumbers={completedNumbers}
+        debugTrue={debugTrue}
         isLandscape={isLandscape}
         landscapePlacement={keypadPlacement.landscape}
         portraitIsAbove={isPortraitKeypadAbove}

@@ -9,7 +9,13 @@ import { ScreenOrientation } from "@capacitor/screen-orientation";
 import { StatusBar } from "@capacitor/status-bar";
 import { GameProvider } from "./contexts/GameProvider";
 import { GameTypesKeys } from "./types/mineTypes";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent,
+} from "react";
 import { SudokuDifficulty } from "./utils/sudokuSetup";
 
 type GameChoice = "launcher" | "minesweeper" | "sudoku";
@@ -47,6 +53,7 @@ const minesweeperWinsToUnlockNextDifficulty: MinesweeperProgress = {
   expert: 15,
 };
 const minesweeperProgressStorageKey = "minesweeper-progression";
+const debugLongPressDelay = 700;
 const defaultMinesweeperProgress: MinesweeperProgress = {
   test: 0,
   beginner: 0,
@@ -192,6 +199,11 @@ const getSavedSudokuGameAgeLabel = (updatedAt: string) => {
 
   return `played ${elapsedDays} days ago`;
 };
+
+const getFormattedElapsedTime = (elapsedSeconds: number) =>
+  `${Math.floor(elapsedSeconds / 60)
+    .toString()
+    .padStart(2, "0")}:${(elapsedSeconds % 60).toString().padStart(2, "0")}`;
 
 const getSavedMinesweeperProgress = (): MinesweeperProgress => {
   const savedProgress = window.localStorage.getItem(
@@ -351,6 +363,7 @@ function App() {
   );
   const [isBackConfirmOpen, setIsBackConfirmOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [debugTrue, setDebugTrue] = useState(false);
   const [isSudokuLandscape, setIsSudokuLandscape] = useState(false);
   const [sharedYouTubeEmbedUrl, setSharedYouTubeEmbedUrl] = useState<
     string | null
@@ -362,6 +375,8 @@ function App() {
   const minesweeperProgressRef = useRef(minesweeperProgress);
   const sudokuProgressRef = useRef(sudokuProgress);
   const pendingSudokuResumeRef = useRef<SavedSudokuGame | null>(null);
+  const layoutButtonLongPressTimerRef = useRef<number | null>(null);
+  const shouldSuppressLayoutButtonClickRef = useRef(false);
 
   selectedGameRef.current = selectedGame;
   selectedMinesweeperTypeRef.current = selectedMinesweeperType;
@@ -658,10 +673,44 @@ function App() {
   const selectedGameTitle =
     gameOptions.find((game) => game.id === selectedGame)?.title ?? "";
 
-  const formattedTime = `${Math.floor(elapsedSeconds / 60)
-    .toString()
-    .padStart(2, "0")}:${(elapsedSeconds % 60).toString().padStart(2, "0")}`;
+  const formattedTime = getFormattedElapsedTime(elapsedSeconds);
   const isSudokuGame = selectedGame === "sudoku";
+
+  const clearLayoutButtonLongPressTimer = () => {
+    if (layoutButtonLongPressTimerRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(layoutButtonLongPressTimerRef.current);
+    layoutButtonLongPressTimerRef.current = null;
+  };
+
+  const startLayoutButtonLongPressTimer = (
+    event: PointerEvent<HTMLButtonElement>
+  ) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    clearLayoutButtonLongPressTimer();
+
+    layoutButtonLongPressTimerRef.current = window.setTimeout(() => {
+      setDebugTrue((currentDebugTrue) => !currentDebugTrue);
+      shouldSuppressLayoutButtonClickRef.current = true;
+      layoutButtonLongPressTimerRef.current = null;
+    }, debugLongPressDelay);
+  };
+
+  const handleLayoutButtonClick = () => {
+    if (shouldSuppressLayoutButtonClickRef.current) {
+      shouldSuppressLayoutButtonClickRef.current = false;
+      return;
+    }
+
+    setIsSudokuLandscape(
+      (currentIsSudokuLandscape) => !currentIsSudokuLandscape
+    );
+  };
 
   const renderGameHeader = () => {
     if (selectedGame === "launcher") {
@@ -715,11 +764,11 @@ function App() {
                   : "Switch Sudoku to landscape layout"
               }
               className="header-layout-button"
-              onClick={() =>
-                setIsSudokuLandscape(
-                  (currentIsSudokuLandscape) => !currentIsSudokuLandscape
-                )
-              }
+              onClick={handleLayoutButtonClick}
+              onPointerCancel={clearLayoutButtonLongPressTimer}
+              onPointerDown={startLayoutButtonLongPressTimer}
+              onPointerLeave={clearLayoutButtonLongPressTimer}
+              onPointerUp={clearLayoutButtonLongPressTimer}
               type="button"
             >
               <i
@@ -765,6 +814,7 @@ function App() {
           aria-label="Sudoku"
         >
           <SudokuBoard
+            debugTrue={debugTrue}
             difficulty={selectedSudokuDifficulty}
             elapsedSeconds={elapsedSeconds}
             initialSavedGame={initialSudokuGame}
@@ -806,7 +856,8 @@ function App() {
                     <span>Continue game</span>
                     <small>
                       {getSudokuDifficultyLabel(savedSudokuGame.difficulty)} ·{" "}
-                      {getSavedSudokuGameAgeLabel(savedSudokuGame.updatedAt)}
+                      {getSavedSudokuGameAgeLabel(savedSudokuGame.updatedAt)} ·{" "}
+                      {getFormattedElapsedTime(savedSudokuGame.elapsedSeconds)}
                     </small>
                   </button>
                 )}
@@ -906,7 +957,9 @@ function App() {
     <div
       className={`App ${
         selectedGame === "sudoku" && !isSudokuLandscape
-          ? "App-sudoku-portrait debugGreenYellow"
+          ? `App-sudoku-portrait ${
+              debugTrue ? "debugTrue debugGreenYellow" : ""
+            }`
           : ""
       } ${isSudokuLandscape ? "App-sudoku-landscape" : ""}`}
     >
